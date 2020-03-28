@@ -10,7 +10,7 @@ http://www.seasip.info/DOS/
 ただビルドしただけなのでsanguisorbaに追加の著作権等はありません。
 
 # 概要
-MS-DOS 2.11のリビルドについて研究しています。
+MS-DOS 2.11のソースコードをできる範囲でリビルドしました。
 
 # 開発環境
 * PC-98エミュレータ Neko Project 21/W
