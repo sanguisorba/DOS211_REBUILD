@@ -48,7 +48,11 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 
 * メーカーOEMが書かなければならないのはBOOT.ASM(ブートローダ), BIOS.ASM(for IO.SYS), OEMFOR.ASM(for FORMAT.COM) の3つです。
 
-* BIOS.ASMはIO_BUILD,OEMFOR.ASMはFORMAT_BUILDのファイルと共にLINK.EXEでEXEに吐き出します。BOOT.ASMは単独でEXEに吐き出します。
+* BIOS.ASMはSYSINIT.OBJとSYSIMES.OBJと共にLINKする必要があります。この2つのファイルはIO_BUILDフォルダに格納されています。
+
+* OEMFOR.ASMはFORMAT.OBJとFORMES.OBJと共にLINKする必要があります。この2つのファイルはFORMAT_BUILDフォルダに格納されています。
+
+* BOOT.ASMは単独でEXEに吐き出します。ブートセクタですから過不足なく512byteにしなければなりません。
 
 * EXE2BINでBOOT.EXEはBOOT.COM, BIOS.EXEはIO.SYS, FORMAT.EXEはFORMAT.COMにします。
 
@@ -57,4 +61,4 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 * BINフォルダ内の他のものをフロッピーディスクへ書き込めば完成です。
 
 
-* 本レポジトリではBOOT.ASM, BIOS.ASM, OEMFOR.ASMを提供しません。
+# 本レポジトリではBOOT.ASM, BIOS.ASM, OEMFOR.ASMを提供しません。
