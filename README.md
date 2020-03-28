@@ -7,6 +7,8 @@ Rebuild MS-DOS 2.11
 MSDOS.SYS及びMSDOS211フォルダ内のソースコードはJohn Elliott氏によるものです。
 http://www.seasip.info/DOS/
 
+ただビルドしただけなのでsanguisorbaに追加の著作権等はありません。
+
 # 概要
 MS-DOS 2.11のリビルドについて研究しています。
 
