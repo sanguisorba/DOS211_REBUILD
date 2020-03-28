@@ -1,15 +1,15 @@
 # DOS211_REBUILD
 Rebuild MS-DOS 2.11
 
-#概要
+# 概要
 MS-DOS 2.11のリビルドについて研究しています。
 
-#開発環境
+# 開発環境
 * MS-DOS 5.0A 基本機能セット
 * MS-DOS 5.0A 拡張機能セット (LINK, EXE2BIN)
 * Microsoft MACRO Assembler 4.0 (MASM)
 
-#MS-DOSのソースコードの中身
+# MS-DOSのソースコードの中身
 
 https://github.com/microsoft/MS-DOS
 
@@ -21,10 +21,10 @@ MS-DOS Distribution Disksはマイクロソフトが開発を請け負ってい�
 
 ちなみにソースコードのフォルダにはゴミが入っています。WSBAUD.BAS, WSMSGS.OVR, WSOVLY1.OVRはWordStar 3.2のプログラムの一部です。.TXTは全てMS-DOS Distribution Disks内の.DOCと同一です。
 
-#何をしたか
+# 何をしたか
 まずこのレポジトリではソースコードとDistribution Disksを分けました。そしてファイルがそろっているものはビルドも行っています。
 
-#最終的に何ができるか
+# 最終的に何ができるか
 ユーティリティはCHKDSK, DEBUG, DISKCOPY, EDLIN, EXE2BIN, FC, FIND, MORE, PRINT, RECOVER, SORT, SYS
 
 OS本体のうちCOMMAND.COMも難なく生成できます
