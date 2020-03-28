@@ -5,6 +5,7 @@ Rebuild MS-DOS 2.11
 MS-DOS 2.11のリビルドについて研究しています。
 
 # 開発環境
+* PC-98エミュレータ Neko Project 21/W
 * MS-DOS 5.0A 基本機能セット
 * MS-DOS 5.0A 拡張機能セット (LINK, EXE2BIN)
 * Microsoft MACRO Assembler 4.0 (MASM)
@@ -19,7 +20,7 @@ https://github.com/microsoft/MS-DOS
 
 MS-DOS Distribution Disksはマイクロソフトが開発を請け負っていたIBM PC/AT機向けOS PC-DOS 2.0を他のメーカーが作ったPCへ移植するための開発環境です。
 
-ちなみにソースコードのフォルダにはゴミが入っています。WSBAUD.BAS, WSMSGS.OVR, WSOVLY1.OVRはWordStar 3.2のプログラムの一部です。.TXTは全てMS-DOS Distribution Disks内の.DOCと同一です。
+ちなみにオリジナルソースコードのフォルダにはゴミが入っています。WSBAUD.BAS, WSMSGS.OVR, WSOVLY1.OVRはWordStar 3.2のプログラムの一部です。.TXTは全てMS-DOS Distribution Disks内の.DOCと同一です。
 
 # 何をしたか
 まずこのレポジトリではソースコードとDistribution Disksを分けました。そしてファイルがそろっているものはビルドも行っています。
