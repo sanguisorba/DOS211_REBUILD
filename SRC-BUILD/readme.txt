@@ -188,7 +188,7 @@ EXEMOD SORT.EXE /MAX 1 /MIN 1
 適用後はちゃんと動くようになった。
 ```
 
-###SYS.COM 1.81 (起動○　動作未確認)
+###SYS.COM 1.81 (動作○)
 ```
 ○ASM→OBJにする
 SYS.ASM
@@ -201,7 +201,6 @@ DOSSYM.ASM ← 2.11を使う
 LINK SYS.OBJ SYSMES.OBJ
 EXE2BIN SYS.EXE SYS.COM
 ```
-EPSON版MS-DOSはIBMBIO.COM/IBMDOS.COMを採用しており、このソースコードでは無改造だとIO.SYS/MSDOS.SYSのコピーを行うものが生成されるので動作確認ができていません。IBMBIO.COM/IBMDOS.COMをコピーするものに変更すれば正しく動きますが、今回はPC-DOSではなくMS-DOSを生成する事を前提としているのであくまで動作未確認です。
 
 #OS本体
 
