@@ -50,11 +50,13 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 
 * メーカーOEMが書かなければならないのはBOOT.ASM(ブートローダ), BIOS.ASM(for IO.SYS), OEMFOR.ASM(for FORMAT.COM) の3つです。
 
-* BIOS.ASMはSYSINIT.OBJとSYSIMES.OBJと共にLINKする必要があります。この2つのファイルはIO_BUILDフォルダに格納されています。
+* Distribution disks付属のMASMはうまく動作してくれないので別途用意する必要があります。ちなみにPC98用でも動きました。
 
-* OEMFOR.ASMはFORMAT.OBJとFORMES.OBJと共にLINKする必要があります。この2つのファイルはFORMAT_BUILDフォルダに格納されています。
+* BIOS.OBJはSYSINIT.OBJとSYSIMES.OBJと共にLINKする必要があります。この2つのファイルはIO_BUILDフォルダに格納されています。
 
-* BOOT.ASMは単独でEXEに吐き出します。ブートセクタですから過不足なく512byteにしなければなりません。
+* OEMFOR.OBJはFORMAT.OBJとFORMES.OBJと共にLINKする必要があります。この2つのファイルはFORMAT_BUILDフォルダに格納されています。
+
+* BOOT.OBJは単独でEXEに吐き出します。ブートセクタですから過不足なく512byteにしなければなりません。
 
 * EXE2BINでBOOT.EXEはBOOT.COM, BIOS.EXEはIO.SYS, FORMAT.EXEはFORMAT.COMにします。
 
