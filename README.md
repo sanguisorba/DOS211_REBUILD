@@ -42,14 +42,19 @@ MSDOS.SYSは有志が書いたものがあります。
 
 FORMAT.COMはとりあえず生成できますが、実行するとブートセクタ領域が0で埋められるので自力で書く必要があります。
 
-# ビルド方法
+# ブータブルイメージ作成方法
 
-* BOOT.ASM(ブートローダ), BIOS.ASM(for IO.SYS), OEMFOR.ASM(for FORMAT.COM) の3つを書く
+* 本レポジトリはマイクロソフトが本来していたビルド作業を完了していますが、メーカーOEMが行うビルド作業をしていません。
 
-* BIOS.ASMはIO_BUILD,OEMFOR.ASMはFORMAT_BUILDのファイルと共にLINK.EXEでEXEに吐き出す
+* メーカーOEMが書かなければならないのはBOOT.ASM(ブートローダ), BIOS.ASM(for IO.SYS), OEMFOR.ASM(for FORMAT.COM) の3つです。
 
-* EXE2BINでBOOT.EXEはBOOT.COM, BIOS.EXEはIO.SYS, FORMAT.EXEはFORMAT.COMにする。
+* BIOS.ASMはIO_BUILD,OEMFOR.ASMはFORMAT_BUILDのファイルと共にLINK.EXEでEXEに吐き出します。BOOT.ASMは単独でEXEに吐き出します。
 
-* BOOT.COMの内容をブートセクタに書き込む
+* EXE2BINでBOOT.EXEはBOOT.COM, BIOS.EXEはIO.SYS, FORMAT.EXEはFORMAT.COMにします。
 
-* BINフォルダ内の他のものをフロッピーディスクへ書き込む
+* BOOT.COMの内容をブートセクタに書き込みます。フロッピーディスクイメージをバイナリエディタで上書きすると良いです。
+
+* BINフォルダ内の他のものをフロッピーディスクへ書き込めば完成です。
+
+
+* 本レポジトリではBOOT.ASM, BIOS.ASM, OEMFOR.ASMを提供しません。
