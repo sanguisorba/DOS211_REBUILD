@@ -1,6 +1,12 @@
 # DOS211_REBUILD
 Rebuild MS-DOS 2.11
 
+# LICENSE
+殆ど全てのソースコードはマイクロソフトがMITライセンスで配布したものです。
+
+MSDOS.SYS及びMSDOS211フォルダ内のソースコードはJohn Elliott氏によるものです。
+http://www.seasip.info/DOS/
+
 # 概要
 MS-DOS 2.11のリビルドについて研究しています。
 
