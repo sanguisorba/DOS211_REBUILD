@@ -34,3 +34,15 @@ OS本体のうちCOMMAND.COMも難なく生成できます
 MSDOS.SYSは有志が書いたものがあります。
 
 FORMAT.COMはとりあえず生成できますが、実行するとブートセクタ領域が0で埋められるので自力で書く必要があります。
+
+# ビルド方法
+
+* BOOT.ASM(ブートローダ), BIOS.ASM(for IO.SYS), OEMFOR.ASM(for FORMAT.COM) の3つを書く
+
+* BIOS.ASMはIO_BUILD,OEMFOR.ASMはFORMAT_BUILDのファイルと共にLINK.EXEでEXEに吐き出す
+
+* EXE2BINでBOOT.EXEはBOOT.COM, BIOS.EXEはIO.SYS, FORMAT.EXEはFORMAT.COMにする。
+
+* BOOT.COMの内容をブートセクタに書き込む
+
+* BINフォルダ内の他のものをフロッピーディスク
