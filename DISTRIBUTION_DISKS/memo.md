@@ -1,9 +1,9 @@
-#ファイルリスト
+# ファイルリスト
 PCjsによれば5枚組のフロッピーは160KBフォーマットで以下の内容が入っていたようです。
 
 https://www.pcjs.org/disks/pcx86/dos/microsoft/2.00/
 
-#DISK.1
+# DISK.1
 DEBUG    COM    11764   2-01-83  10:13a
 
 EXE2BIN  EXE     1649   2-01-83   9:19a
@@ -36,12 +36,12 @@ MSDOS    SYS    16690   2-08-83   7:48p
 
 README   DOC     8832   1-01-80  12:03a
 
-#DISK.2
+# DISK.2
 MASM     EXE    77440   2-01-83   1:13p
 
 CREF     EXE    13824   6-02-82   6:06p
 
-#DISK.3
+# DISK.3
 DOSMAC   ASM     6656  10-18-82  12:06p
 
 DEVSYM   ASM     2688  10-18-82  12:07p
@@ -60,7 +60,7 @@ FORMAT   DOC    16640   2-03-83   3:37p
 
 FORMES   OBJ     1152   2-03-83   2:03p
 
-#DISK.4
+# DISK.4
 PROHST   PAS    11520   1-28-83   6:07p
 
 FILBP    PAS     6144   1-28-83   6:08p
@@ -83,7 +83,7 @@ PROHST   EXE    41728   1-28-83   5:51p
 
 PROHST   HLP     1536   1-28-83   6:06p
 
-#DISK.5
+# DISK.5
 SYSCALL  DOC    59136   1-27-83   3:18p
 
 DEVDRIV  DOC    37888   1-27-83   3:22p
