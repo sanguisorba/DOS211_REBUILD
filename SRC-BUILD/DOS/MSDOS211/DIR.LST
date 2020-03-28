@@ -1,0 +1,2420 @@
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-1
+                                                            
+
+       1                                ; 
+       2                                ; Directory routines for MSDOS 
+       3                                ; 
+       4                                 
+       5                             C  INCLUDE DOSSEG.ASM 
+       6                             C  ; 
+       7                             C  ; segment ordering for MSDOS 
+       8                             C  ; 
+       9                             C   
+      10 0000                        C  CONSTANTS       SEGMENT BYTE PUBLIC 'CO
+					NST' 
+      11 0000                        C  CONSTANTS       ENDS 
+      12                             C   
+      13 0000                        C  DATA            SEGMENT BYTE PUBLIC 'DA
+					TA' 
+      14 0000                        C  DATA            ENDS 
+      15                             C   
+      16 0000                        C  CODE            SEGMENT BYTE PUBLIC 'CO
+					DE' 
+      17 0000                        C  CODE            ENDS 
+      18                             C   
+      19 0000                        C  LAST            SEGMENT BYTE PUBLIC 'LA
+					ST' 
+      20 0000                        C  LAST            ENDS 
+      21                             C   
+      22                             C  DOSGROUP    GROUP   CODE,CONSTANTS,DATA
+					,LAST 
+      23                                 
+      24                                 
+      25 0000                           CODE    SEGMENT BYTE PUBLIC  'CODE' 
+      26                                        ASSUME  SS:DOSGROUP,CS:DOSGROUP
+					 
+      27                                 
+      28                                .list 
+      29                                 
+      30                                TITLE   DIR - Directory and path cracki
+					ng 
+      31                                NAME    Dir 
+      32                                 
+      33                                        i_need  NoSetDir,BYTE 
+      34 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      35 0000                         1  DATA ENDS
+      36                                        i_need  EntFree,WORD 
+      37 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      38 0000                         1  DATA ENDS
+      39                                        i_need  DirStart,WORD 
+      40 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      41 0000                         1  DATA ENDS
+      42                                        i_need  LastEnt,WORD 
+      43 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      44 0000                         1  DATA ENDS
+      45                                        i_need  ClusNum,WORD 
+      46 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      47 0000                         1  DATA ENDS
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-2
+DEVICE TABLE AND SRH DEFINITION                             
+
+      48                                        i_need  CurBuf,DWORD 
+      49 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      50 0000                         1  DATA ENDS
+      51                                        i_need  ThisFCB,DWORD 
+      52 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      53 0000                         1  DATA ENDS
+      54                                        i_need  Attrib,BYTE 
+      55 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      56 0000                         1  DATA ENDS
+      57                                        i_need  DelAll,BYTE 
+      58 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      59 0000                         1  DATA ENDS
+      60                                        i_need  VolID,BYTE 
+      61 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      62 0000                         1  DATA ENDS
+      63                                        i_need  Name1,BYTE 
+      64 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      65 0000                         1  DATA ENDS
+      66                                        i_need  ThisDPB,DWORD 
+      67 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      68 0000                         1  DATA ENDS
+      69                                        i_need  EntLast,WORD 
+      70 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      71 0000                         1  DATA ENDS
+      72                                        i_need  Creating,BYTE 
+      73 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      74 0000                         1  DATA ENDS
+      75                                        i_need  SecClusPos,BYTE 
+      76 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      77 0000                         1  DATA ENDS
+      78                                        i_need  ClusFac,BYTE 
+      79 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      80 0000                         1  DATA ENDS
+      81                                        i_need  NxtClusNum,WORD 
+      82 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      83 0000                         1  DATA ENDS
+      84                                        i_need  DirSec,WORD 
+      85 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      86 0000                         1  DATA ENDS
+      87                                        i_need  DriveSpec,BYTE 
+      88 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      89 0000                         1  DATA ENDS
+      90                                        i_need  Device_availability,BYT
+					E 
+      91 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      92 0000                         1  DATA ENDS
+      93                                        i_need  RootStart,BYTE 
+      94 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      95 0000                         1  DATA ENDS
+      96                                        i_need  DevString,BYTE 
+      97 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      98 0000                         1  DATA ENDS
+      99                                        i_need  DevStrLen,BYTE 
+     100 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-3
+DEVICE TABLE AND SRH DEFINITION                             
+
+     101 0000                         1  DATA ENDS
+     102                                 
+     103                                SUBTTL BUILDDIR,NEWDIR -- ALLOCATE DIRE
+					CTORIES 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-4
+BUILDDIR,NEWDIR -- ALLOCATE DIRECTORIES                     
+
+     104                                PAGE 
+     105                                    procedure   BUILDDIR,NEAR 
+     106 0000                         1 BUILDDIR PROC NEAR
+     107                                ASSUME  DS:DOSGROUP,ES:NOTHING 
+     108                                 
+     109                                ; Inputs: 
+     110                                ;       ES:BP Points to DPB 
+     111                                ;       [THISFCB] Set if using NEWDIR e
+					ntry point 
+     112                                ;       [LASTENT] current last valid en
+					try number in directory if no free 
+     113                                ;               entries 
+     114                                ; Function: 
+     115                                ;       Grow directory if no free entri
+					es and not root 
+     116                                ; Outputs: 
+     117                                ;       CARRY SET IF FAILURE 
+     118                                ;       ELSE 
+     119                                ;          AX entry number of new entry
+					 
+     120                                ;          If a new dir [DIRSTART],[CLU
+					SFAC],[CLUSNUM],[DIRSEC] set 
+     121                                ;               AX = first entry of new
+					 dir 
+     122                                ;       GETENT should be called to set 
+					[LASTENT] 
+     123                                 
+     124 0000  A1 0000 E                        MOV     AX,[ENTFREE] 
+     125 0003  3D FFFF                          CMP     AX,-1 
+     126 0006  75 76                            JNZ     GOTRET 
+     127 0008  83 3E 0000 E 00                  CMP     [DIRSTART],0 
+     128 000D  75 02                            JNZ     NEWDIR 
+     129 000F  F9                               STC 
+     130                                        return                  ; Can't
+					 grow root 
+     131 0010                         1 ??0000:
+     132 0010  C3                     1  RET
+     133                                 
+     134                                        entry   NEWDIR 
+     135 0011                         1 NEWDIR:
+     136 0011  8B 1E 0000 E                     MOV     BX,[DIRSTART] 
+     137 0015  0B DB                            OR      BX,BX 
+     138 0017  74 03                            JZ      NULLDIR 
+     139                                        invoke  GETEOF 
+     140 0019  E8 0000 E              1  CALL GETEOF
+     141 001C                           NULLDIR: 
+     142 001C  B9 0001                          MOV     CX,1 
+     143                                        invoke  ALLOCATE 
+     144 001F  E8 0000 E              1  CALL ALLOCATE
+     145                                        retc 
+     146 0022  72 EC                  2  ??0001: jc ret_l
+     147 0024  8B 16 0000 E                     MOV     DX,[DIRSTART] 
+     148 0028  0B D2                            OR      DX,DX 
+     149 002A  75 0B                            JNZ     ADDINGDIR 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-5
+BUILDDIR,NEWDIR -- ALLOCATE DIRECTORIES                     
+
+     150 002C  E8 021F R                        call    SETDIRSRCH 
+     151 002F  C7 06 0000 E FFFF                MOV     [LASTENT],-1 
+     152 0035  EB 13                            JMP     SHORT GOTDIRREC 
+     153 0037                           ADDINGDIR: 
+     154 0037  81 3E 0000 E 0FF8                CMP     [CLUSNUM],0FF8H 
+     155 003D  72 04                            JB      NOTFIRSTGROW 
+     156 003F  89 1E 0000 E                     MOV     [CLUSNUM],BX 
+     157 0043                           NOTFIRSTGROW: 
+     158 0043  8B D3                            MOV     DX,BX 
+     159 0045  32 DB                            XOR     BL,BL 
+     160                                        invoke  FIGREC 
+     161 0047  E8 0000 E              1  CALL FIGREC
+     162 004A                           GOTDIRREC: 
+     163 004A  26: 8A 4E 04                     MOV     CL,ES:[BP.dpb_cluster_m
+					ask] 
+     164 004E  FE C1                            INC     CL 
+     165 0050  32 ED                            XOR     CH,CH 
+     166 0052                           ZERODIR: 
+     167 0052  51                               PUSH    CX 
+     168 0053  B0 FF                            MOV     AL,0FFH 
+     169                                        invoke  GETBUFFR 
+     170 0055  E8 0000 E              1  CALL GETBUFFR
+     171 0058  26: 8B 4E 02                     MOV     CX,ES:[BP.dpb_sector_si
+					ze] 
+     172 005C  06                               PUSH    ES 
+     173 005D  C4 3E 0000 E                     LES     DI,[CURBUF] 
+     174 0061  57                               PUSH    DI 
+     175 0062  83 C7 10                         ADD     DI,BUFINSIZ 
+     176 0065  33 C0                            XOR     AX,AX 
+     177 0067  D1 E9                            SHR     CX,1 
+     178 0069  F3/ AB                           REP     STOSW 
+     179 006B  73 01                            JNC     EVENZ 
+     180 006D  AA                               STOSB 
+     181 006E                           EVENZ: 
+     182 006E  5F                               POP     DI 
+     183 006F  FE C0                            INC     AL 
+     184 0071  26: 88 45 05                     MOV     ES:[DI.BUFDIRTY],AL 
+     185 0075  07                               POP     ES 
+     186 0076  59                               POP     CX 
+     187 0077  42                               INC     DX 
+     188 0078  E2 D8                            LOOP    ZERODIR 
+     189 007A  A1 0000 E                        MOV     AX,[LASTENT] 
+     190 007D  40                               INC     AX 
+     191 007E                           GOTRET: 
+     192 007E  F8                               CLC 
+     193                                        return 
+     194 007F                         1 ??0003:
+     195 007F  C3                     1  RET
+     196                                 
+     197                                BUILDDIR    ENDP 
+     198                                 
+     199                                ; 
+     200                                ; set up a . and .. directory entry for
+					 a directory 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-6
+BUILDDIR,NEWDIR -- ALLOCATE DIRECTORIES                     
+
+     201                                ; 
+     202                                        procedure   SETDOTENT,NEAR 
+     203 0080                         1 SETDOTENT PROC NEAR
+     204                                ASSUME  DS:DOSGROUP 
+     205 0080  B9 0004                          MOV     CX,4 
+     206 0083  B8 2020                          MOV     AX,2020H 
+     207 0086  F3/ AB                           REP     STOSW 
+     208 0088  AA                               STOSB 
+     209 0089  8B 36 0000 E                     MOV     SI,WORD PTR [THISFCB] 
+     210 008D  B0 10                            MOV     AL,attr_directory 
+     211 008F  AA                               STOSB 
+     212 0090  83 C7 0A                         ADD     DI,10 
+     213 0093  8B 44 16                         MOV     AX,[SI.fcb_FTIME] 
+     214 0096  AB                               STOSW 
+     215 0097  8B 44 14                         MOV     AX,[SI.fcb_FDATE] 
+     216 009A  AB                               STOSW 
+     217 009B  8B C2                            MOV     AX,DX 
+     218 009D  AB                               STOSW 
+     219 009E  33 C0                            XOR     AX,AX 
+     220 00A0  AB                               STOSW 
+     221 00A1  AB                               STOSW 
+     222                                        return 
+     223 00A2                         1 ??0004:
+     224 00A2  C3                     1  RET
+     225                                SETDOTENT   ENDP 
+     226                                 
+     227                                SUBTTL GETFILE, GETNAME, FINDNAME -- LO
+					OK FOR A FILE 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-7
+GETFILE, GETNAME, FINDNAME -- LOOK FOR A FILE               
+
+     228                                PAGE 
+     229                                        procedure   SEARCH,near 
+     230 00A3                         1 SEARCH PROC near
+     231                                 
+     232                                        entry   GETFILE 
+     233 00A3                         1 GETFILE:
+     234                                ASSUME  DS:NOTHING,ES:NOTHING 
+     235                                ; Same as GETNAME except ES:DI points t
+					o FCB on successful return 
+     236                                        invoke  MOVNAME 
+     237 00A3  E8 0000 E              1  CALL MOVNAME
+     238                                        retc 
+     239 00A6  72 FA                  2  ??0005: jc ret_l
+     240 00A8  52                               PUSH    DX 
+     241 00A9  1E                               PUSH    DS 
+     242 00AA  E8 00B5 R                        CALL    FINDNAME 
+     243 00AD  07                               POP     ES 
+     244 00AE  5F                               POP     DI 
+     245                                        return 
+     246 00AF                         1 ??0007:
+     247 00AF  C3                     1  RET
+     248                                 
+     249                                        entry   GETNAME 
+     250 00B0                         1 GETNAME:
+     251                                ASSUME  DS:NOTHING,ES:NOTHING 
+     252                                 
+     253                                ; Inputs: 
+     254                                ;       DS,DX point to FCB 
+     255                                ; Function: 
+     256                                ;       Find file name in disk director
+					y. First byte is 
+     257                                ;       drive number (0=current disk). 
+					"?" matches any 
+     258                                ;       character. 
+     259                                ; Outputs: 
+     260                                ;       Carry set if file not found 
+     261                                ;       ELSE 
+     262                                ;       Zero set if attributes match (a
+					lways except when creating) 
+     263                                ;       AH = Device ID (bit 7 set if no
+					t disk) 
+     264                                ;       [THISDPB] = Base of drive param
+					eters 
+     265                                ;       DS = DOSGROUP 
+     266                                ;       ES = DOSGROUP 
+     267                                ;       [CURBUF+2]:BX = Pointer into di
+					rectory buffer 
+     268                                ;       [CURBUF+2]:SI = Pointer to Firs
+					t Cluster field in directory entry 
+     269                                ;       [CURBUF] has directory record w
+					ith match 
+     270                                ;       [NAME1] has file name 
+     271                                ; All other registers destroyed. 
+     272                                 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-8
+GETFILE, GETNAME, FINDNAME -- LOOK FOR A FILE               
+
+     273                                        invoke  MOVNAME 
+     274 00B0  E8 0000 E              1  CALL MOVNAME
+     275                                ASSUME  ES:DOSGROUP 
+     276                                        retc                    ; Bad f
+					ile name? 
+     277 00B3  72 FA                  2  ??0008: jc ret_l
+     278                                 
+     279                                        entry   FINDNAME 
+     280 00B5                         1 FINDNAME:
+     281 00B5  16                               PUSH    SS 
+     282 00B6  1F                               POP     DS 
+     283                                ASSUME  DS:DOSGROUP 
+     284                                        invoke  DEVNAME 
+     285 00B7  E8 0000 E              1  CALL DEVNAME
+     286 00BA  72 04                            JC      FindEntry 
+     287                                        invoke  BUILDFCB 
+     288 00BC  E8 0000 E              1  CALL BUILDFCB
+     289                                        return 
+     290 00BF                         1 ??000A:
+     291 00BF  C3                     1  RET
+     292                                ASSUME  ES:NOTHING 
+     293                                 
+     294                                ; NOTE THE FALL THROUGH 
+     295                                 
+     296                                SUBTTL FINDENTRY -- LOOK FOR AN ENTRY 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-9
+FINDENTRY -- LOOK FOR AN ENTRY                              
+
+     297                                PAGE 
+     298                                        entry   FindEntry 
+     299 00C0                         1 FindEntry:
+     300                                ASSUME  DS:DOSGROUP,ES:NOTHING 
+     301                                 
+     302                                ; Inputs: 
+     303                                ;       [THISDPB] set 
+     304                                ;       [SECCLUSPOS] = 0 
+     305                                ;       [DIRSEC] = Starting directory s
+					ector number 
+     306                                ;       [CLUSNUM] = Next cluster of dir
+					ectory 
+     307                                ;       [CLUSFAC] = Sectors/Cluster 
+     308                                ;       [NAME1] = Name to look for 
+     309                                ; Function: 
+     310                                ;       Find file name in disk director
+					y. 
+     311                                ;       "?" matches any character. 
+     312                                ; Outputs: 
+     313                                ;       Carry set if name not found 
+     314                                ;       ELSE 
+     315                                ;       Zero set if attributes match (a
+					lways except when creating) 
+     316                                ;       AH = Device ID (bit 7 set if no
+					t disk) 
+     317                                ;       [THISDPB] = Base of drive param
+					eters 
+     318                                ;       DS = DOSGROUP 
+     319                                ;       ES = DOSGROUP 
+     320                                ;       [CURBUF+2]:BX = Pointer into di
+					rectory buffer 
+     321                                ;       [CURBUF+2]:SI = Pointer to Firs
+					t Cluster field in directory entry 
+     322                                ;       [CURBUF] has directory record w
+					ith match 
+     323                                ;       [NAME1] has file name 
+     324                                ;       [LASTENT] is entry number of th
+					e entry 
+     325                                ; All other registers destroyed. 
+     326                                 
+     327 00C0  E8 04A2 R                        CALL    STARTSRCH 
+     328 00C3  80 3E 0000 E 08                  CMP     BYTE PTR [ATTRIB],attr_
+					volume_id 
+     329                                                                ; Looki
+					ng for vol ID only ? 
+     330 00C8  75 03                            JNZ     NOTVOLSRCH      ; No 
+     331 00CA  E8 01F7 R                        CALL    SETROOTSRCH     ; Yes f
+					orce search of root 
+     332 00CD                           NOTVOLSRCH: 
+     333 00CD  E8 015E R                        CALL    GETENTRY 
+     334                                        entry   Srch 
+     335 00D0                         1 Srch:
+     336 00D0  1E                               PUSH    DS 
+     337 00D1  8E 1E 0002 E                     MOV     DS,WORD PTR [CURBUF+2] 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-10
+FINDENTRY -- LOOK FOR AN ENTRY                              
+
+     338                                ASSUME  DS:NOTHING 
+     339 00D5  8A 27                            MOV     AH,BYTE PTR [BX] 
+     340 00D7  0A E4                            OR      AH,AH                  
+					 ; End of directory? 
+     341 00D9  74 33                            JZ      FREE 
+     342 00DB  36: 3A 26 0000 E                 CMP     AH,BYTE PTR [DELALL]   
+					          ; Free entry? 
+     343 00E0  74 2C                            JZ      FREE 
+     344 00E2  F6 47 0B 08                      TEST    BYTE PTR [BX+11],attr_v
+					olume_id 
+     345                                                                       
+					 ; Volume ID file? 
+     346 00E6  74 05                            JZ      CHKFNAM                
+					 ; NO 
+     347 00E8  36: FE 06 0000 E                 INC     BYTE PTR [VOLID] 
+     348 00ED                           CHKFNAM: 
+     349 00ED  8B F3                            MOV     SI,BX 
+     350 00EF  16                               PUSH    SS 
+     351 00F0  07                               POP     ES 
+     352                                ASSUME  ES:DOSGROUP 
+     353 00F1  BF 0000 E                        MOV     DI,OFFSET DOSGROUP:NAME
+					1 
+     354 00F4  B9 000B                          MOV     CX,11 
+     355 00F7                           WILDCRD: 
+     356 00F7  F3/ A6                           REPE    CMPSB 
+     357 00F9  74 2F                            JZ      FOUND 
+     358 00FB  26: 80 7D FF 3F                  CMP     BYTE PTR ES:[DI-1],"?" 
+     359 0100  74 F5                            JZ      WILDCRD 
+     360 0102  1F                               POP     DS 
+     361                                ASSUME  DS:DOSGROUP 
+     362                                        entry   NEXTENT 
+     363 0103                         1 NEXTENT:
+     364 0103  C4 2E 0000 E                     LES     BP,[THISDPB] 
+     365                                ASSUME  ES:NOTHING 
+     366 0107  E8 018C R                        CALL    NEXTENTRY 
+     367 010A  73 C4                            JNC     SRCH 
+     368 010C  EB 4D                            JMP     SHORT SETESRET 
+     369                                 
+     370 010E                           FREE: 
+     371 010E  1F                               POP     DS 
+     372                                ASSUME  DS:DOSGROUP 
+     373 010F  8B 0E 0000 E                     MOV     CX,[LASTENT] 
+     374 0113  3B 0E 0000 E                     CMP     CX,[ENTFREE] 
+     375 0117  73 04                            JAE     TSTALL 
+     376 0119  89 0E 0000 E                     MOV     [ENTFREE],CX 
+     377 011D                           TSTALL: 
+     378 011D  3A 26 0000 E                     CMP     AH,BYTE PTR [DELALL]   
+					          ; At end of directory? 
+     379 0121  74 E0                            JZ      NEXTENT                
+					 ; No - continue search 
+     380 0123  89 0E 0000 E                     MOV     [ENTLAST],CX 
+     381 0127  F9                               STC 
+     382 0128  EB 31                            JMP     SHORT SETESRET 
+     383                                 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-11
+FINDENTRY -- LOOK FOR AN ENTRY                              
+
+     384 012A                           FOUND: 
+     385                                ; 
+     386                                ; We have a file with a matching name. 
+					 We must now consider 
+     387                                ; the attributes: 
+     388                                ; ATTRIB        Action 
+     389                                ; ------        ------ 
+     390                                ; Volume_ID     Is Volume_ID in test? 
+     391                                ; Otherwise     If no create then Is AT
+					TRIB+extra superset of test? 
+     392                                ;               If create then Is ATTRI
+					B equal to test? 
+     393                                ; 
+     394 012A  8A 2C                            MOV     CH,[SI]                
+					 ; Attributes of file 
+     395 012C  1F                               POP     DS 
+     396                                ASSUME  DS:DOSGROUP 
+     397 012D  8A 26 0000 E                     MOV     AH,BYTE PTR [ATTRIB]   
+					 ; Attributes of search 
+     398 0131  F6 C5 08                         TEST    CH,attr_volume_id      
+					 ; Volume ID file? 
+     399 0134  74 09                            JZ      check_one_volume_id    
+					 ; Nope check other attributes 
+     400 0136  F6 C4 08                         TEST    AH,attr_volume_id      
+					 ; Can we find Volume ID? 
+     401 0139  74 C8                            JZ      NEXTENT                
+					 ; Nope, (not even $FCB_CREATE) 
+     402 013B  32 E4                            XOR     AH,AH                  
+					 ; Set zero flag for $FCB_CREATE 
+     403 013D  EB 14                            JMP     SHORT RETF             
+					 ; Found Volume ID 
+     404 013F                           check_one_volume_id: 
+     405 013F  80 FC 08                         CMP     AH,attr_volume_id      
+					 ; Looking only for Volume ID? 
+     406 0142  74 BF                            JZ      NEXTENT                
+					 ; Yes, continue search 
+     407 0144  83 C6 0F                         ADD     SI,15 
+     408 0147  E8 04B6 R                        CALL    MatchAttributes 
+     409 014A  74 07                            JZ      RETF 
+     410 014C  F6 06 0000 E FF                  TEST    BYTE PTR [CREATING],-1 
+					 ; Pass back mismatch if creating 
+     411 0151  74 B0                            JZ      NEXTENT                
+					 ; Otherwise continue searching 
+     412 0153                           RETF: 
+     413 0153  C4 2E 0000 E                     LES     BP,[THISDPB] 
+     414 0157  26: 8A 66 00                     MOV     AH,ES:[BP.dpb_drive] 
+     415 015B                           SETESRET: 
+     416 015B  16                               PUSH    SS 
+     417 015C  07                               POP     ES 
+     418                                        return 
+     419 015D                         1 ??000B:
+     420 015D  C3                     1  RET
+     421                                 
+     422                                SUBTTL GETENTRY, NEXTENTRY, GETENT -- S
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-12
+GETENTRY, NEXTENTRY, GETENT -- STEP THROUGH DIRECTORY       
+
+					TEP THROUGH DIRECTORY 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-13
+GETENTRY, NEXTENTRY, GETENT -- STEP THROUGH DIRECTORY       
+
+     423                                PAGE 
+     424                                        entry   GETENTRY 
+     425 015E                         1 GETENTRY:
+     426                                ASSUME  DS:DOSGROUP,ES:NOTHING 
+     427                                 
+     428                                ; Inputs: 
+     429                                ;       [LASTENT] has directory entry 
+     430                                ;       ES:BP points to drive parameter
+					s 
+     431                                ; Function: 
+     432                                ;       Locates directory entry in prep
+					aration for search 
+     433                                ;       GETENT provides entry for passi
+					ng desired entry in AX 
+     434                                ;       A valid search environment MUST
+					 exist 
+     435                                ;               ENDENT,ENTLAST,ENTFREE 
+     436                                ; Outputs: 
+     437                                ;       [CURBUF+2]:BX = Pointer to next
+					 directory entry in CURBUF 
+     438                                ;       [CURBUF+2]:DX = Pointer to firs
+					t byte after end of CURBUF 
+     439                                ;       [LASTENT] = New directory entry
+					 number 
+     440                                 
+     441 015E  A1 0000 E                        MOV     AX,[LASTENT] 
+     442                                        entry   GETENT 
+     443 0161                         1 GETENT:
+     444 0161  A3 0000 E                        MOV     [LASTENT],AX 
+     445 0164  B1 04                            MOV     CL,4 
+     446 0166  D3 E0                            SHL     AX,CL 
+     447 0168  33 D2                            XOR     DX,DX 
+     448 016A  D1 E0                            SHL     AX,1 
+     449 016C  D1 D2                            RCL     DX,1                   
+					 ; Account for overflow in last shift 
+     450 016E  26: 8B 5E 02                     MOV     BX,ES:[BP.dpb_sector_si
+					ze] 
+     451 0172  80 E3 E0                         AND     BL,255-31              
+					 ; Must be multiple of 32 
+     452 0175  F7 F3                            DIV     BX 
+     453 0177  8B DA                            MOV     BX,DX                  
+					 ; Position within sector 
+     454 0179  53                               PUSH    BX 
+     455                                        invoke  DIRREAD 
+     456 017A  E8 0000 E              1  CALL DIRREAD
+     457 017D  5B                               POP     BX 
+     458 017E                           SETENTRY: 
+     459 017E  8B 16 0000 E                     MOV     DX,WORD PTR [CURBUF] 
+     460 0182  83 C2 10                         ADD     DX,BUFINSIZ 
+     461 0185  03 DA                            ADD     BX,DX 
+     462 0187  26: 03 56 02                     ADD     DX,ES:[BP.dpb_sector_si
+					ze]       ; Always clears carry 
+     463                                        return 
+     464 018B                         1 ??000C:
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-14
+GETENTRY, NEXTENTRY, GETENT -- STEP THROUGH DIRECTORY       
+
+     465 018B  C3                     1  RET
+     466                                 
+     467                                        entry   NEXTENTRY 
+     468 018C                         1 NEXTENTRY:
+     469                                ASSUME  DS:DOSGROUP,ES:NOTHING 
+     470                                 
+     471                                ; Inputs: 
+     472                                ;       Same as outputs of GETENTRY, ab
+					ove 
+     473                                ; Function: 
+     474                                ;       Update BX, and [LASTENT] for ne
+					xt directory entry. 
+     475                                ;       Carry set if no more. 
+     476                                 
+     477 018C  A1 0000 E                        MOV     AX,[LASTENT] 
+     478 018F  3B 06 0000 E                     CMP     AX,[ENTLAST] 
+     479 0193  74 25                            JZ      NONE 
+     480 0195  40                               INC     AX 
+     481 0196  83 C3 20                         ADD     BX,32 
+     482 0199  3B DA                            CMP     BX,DX 
+     483 019B  72 1F                            JB      HAVIT 
+     484 019D  8A 1E 0000 E                     MOV     BL,BYTE PTR [SECCLUSPOS
+					] 
+     485 01A1  FE C3                            INC     BL 
+     486 01A3  3A 1E 0000 E                     CMP     BL,BYTE PTR [CLUSFAC] 
+     487 01A7  72 18                            JB      SAMECLUS 
+     488 01A9  8B 1E 0000 E                     MOV     BX,[NXTCLUSNUM] 
+     489 01AD  81 FB 0FF8                       CMP     BX,0FF8H 
+     490 01B1  73 07                            JAE     NONE 
+     491 01B3  83 FB 02                         CMP     BX,2 
+     492 01B6  72 02                            JB      NONE 
+     493 01B8  EB A7                            JMP     GETENT 
+     494                                 
+     495 01BA                           NONE: 
+     496 01BA  F9                               STC 
+     497                                        return 
+     498 01BB                         1 ??000D:
+     499 01BB  C3                     1  RET
+     500                                 
+     501 01BC                           HAVIT: 
+     502 01BC  A3 0000 E                        MOV     [LASTENT],AX 
+     503 01BF  F8                               CLC 
+     504                                        return 
+     505 01C0                         1 ??000E:
+     506 01C0  C3                     1  RET
+     507                                 
+     508 01C1                           SAMECLUS: 
+     509 01C1  88 1E 0000 E                     MOV     BYTE PTR [SECCLUSPOS],B
+					L 
+     510 01C5  A3 0000 E                        MOV     [LASTENT],AX 
+     511 01C8  1E                               PUSH    DS 
+     512 01C9  C5 3E 0000 E                     LDS     DI,[CURBUF] 
+     513                                ASSUME  DS:NOTHING 
+     514 01CD  8B 55 08                         MOV     DX,[DI.BUFSECNO] 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-15
+GETENTRY, NEXTENTRY, GETENT -- STEP THROUGH DIRECTORY       
+
+     515 01D0  42                               INC     DX 
+     516 01D1  1F                               POP     DS 
+     517                                ASSUME  DS:DOSGROUP 
+     518                                        invoke  FIRSTCLUSTER 
+     519 01D2  E8 0000 E              1  CALL FIRSTCLUSTER
+     520 01D5  33 DB                            XOR     BX,BX 
+     521 01D7  EB A5                            JMP     SETENTRY 
+     522                                Search  ENDP 
+     523                                 
+     524                                SUBTTL GETCURRDIR -- GET CURRENT DIRECT
+					ORY 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-16
+GETCURRDIR -- GET CURRENT DIRECTORY                         
+
+     525                                PAGE 
+     526                                        procedure   Dir_search,NEAR 
+     527 01D9                         1 Dir_search PROC NEAR
+     528                                        entry   GETCURRDIR 
+     529 01D9                         1 GETCURRDIR:
+     530                                ASSUME  DS:NOTHING,ES:NOTHING 
+     531                                 
+     532                                ; Inputs: 
+     533                                ;       ES:BP Points to DPB 
+     534                                ;       FATREAD should be called before
+					 this routine 
+     535                                ; Function: 
+     536                                ;       Find current directory for driv
+					e 
+     537                                ;       If path is bad set current dire
+					ctory to the root 
+     538                                ; Outputs: 
+     539                                ;       DS = DOSGROUP 
+     540                                ;       [SECCLUSPOS] = 0 
+     541                                ;       [DIRSTART] = Cluster # of first
+					 cluster of directory ( 0 if root) 
+     542                                ;       [DIRSEC] Set to phys sec # of f
+					irst sector first cluster of directory 
+     543                                ;       [CLUSNUM] Set to next cluster 
+     544                                ;       [CLUSFAC] Sectors/cluster 
+     545                                ; Destroys all registers 
+     546                                 
+     547 01D9  26: 8B 5E 1C                     MOV     BX,ES:[BP.dpb_current_d
+					ir] 
+     548 01DD  0B DB                            OR      BX,BX 
+     549 01DF  74 16                            JZ      SETROOTSRCH 
+     550 01E1  81 FB 0FF8                       CMP     BX,0FF8H 
+     551 01E5  72 38                            JB      SETDIRSRCH 
+     552 01E7  06                               PUSH    ES 
+     553 01E8  1F                               POP     DS 
+     554 01E9  8D 76 1E                         LEA     SI,[BP.dpb_dir_text] 
+     555 01EC  E8 03E1 R                        CALL    ROOTPATH 
+     556                                ASSUME  DS:DOSGROUP 
+     557 01EF  73 26                            JNC     SETCURR 
+     558 01F1  26: C7 46 1C 0000                MOV     ES:[BP.dpb_current_dir]
+					,0 
+     559                                 
+     560 01F7                           SETROOTSRCH: 
+     561                                ASSUME  DS:NOTHING,ES:NOTHING 
+     562 01F7  16                               PUSH    SS 
+     563 01F8  1F                               POP     DS 
+     564                                ASSUME  DS:DOSGROUP 
+     565 01F9  33 C0                            XOR     AX,AX 
+     566 01FB  A3 0000 E                        MOV     [DIRSTART],AX 
+     567 01FE  A2 0000 E                        MOV     BYTE PTR [SECCLUSPOS],A
+					L 
+     568 0201  48                               DEC     AX 
+     569 0202  A3 0000 E                        MOV     [CLUSNUM],AX 
+     570 0205  26: 8B 46 0B                     MOV     AX,ES:[BP.dpb_first_sec
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-17
+GETCURRDIR -- GET CURRENT DIRECTORY                         
+
+					tor] 
+     571 0209  26: 8B 56 10                     MOV     DX,ES:[BP.dpb_dir_secto
+					r] 
+     572 020D  2B C2                            SUB     AX,DX 
+     573 020F  A2 0000 E                        MOV     BYTE PTR [CLUSFAC],AL 
+     574 0212  89 16 0000 E                     MOV     [DIRSEC],DX 
+     575                                        return 
+     576 0216                         1 ??000F:
+     577 0216  C3                     1  RET
+     578                                 
+     579 0217                           SETCURR: 
+     580                                ASSUME  DS:DOSGROUP 
+     581 0217  A1 0000 E                        MOV     AX,[DIRSTART] 
+     582 021A  26: 89 46 1C                     MOV     ES:[BP.dpb_current_dir]
+					,AX 
+     583                                        return 
+     584 021E                         1 ??0010:
+     585 021E  C3                     1  RET
+     586                                 
+     587                                        entry   SETDIRSRCH 
+     588 021F                         1 SETDIRSRCH:
+     589                                ASSUME  DS:NOTHING,ES:NOTHING 
+     590                                 
+     591                                ; Inputs: 
+     592                                ;       BX cluster number of start of d
+					irectory 
+     593                                ;       ES:BP Points to DPB 
+     594                                ; Function: 
+     595                                ;       Set up a directory search 
+     596                                ; Outputs: 
+     597                                ;       DS = DOSGROUP 
+     598                                ;       [DIRSTART] = BX 
+     599                                ;       [CLUSFAC],[CLUSNUM],[SECCLUSPOS
+					],[DIRSEC] set 
+     600                                ; destroys AX,DX 
+     601                                 
+     602 021F  0B DB                            OR      BX,BX 
+     603 0221  74 D4                            JZ      SETROOTSRCH 
+     604 0223  16                               PUSH    SS 
+     605 0224  1F                               POP     DS 
+     606                                ASSUME  DS:DOSGROUP 
+     607 0225  89 1E 0000 E                     MOV     [DIRSTART],BX 
+     608 0229  26: 8A 46 04                     MOV     AL,ES:[BP.dpb_cluster_m
+					ask] 
+     609 022D  FE C0                            INC     AL 
+     610 022F  A2 0000 E                        MOV     BYTE PTR [CLUSFAC],AL 
+     611                                        invoke  UNPACK 
+     612 0232  E8 0000 E              1  CALL UNPACK
+     613 0235  89 3E 0000 E                     MOV     [CLUSNUM],DI 
+     614 0239  8B D3                            MOV     DX,BX 
+     615 023B  32 DB                            XOR     BL,BL 
+     616 023D  88 1E 0000 E                     MOV     BYTE PTR [SECCLUSPOS],B
+					L 
+     617                                        invoke  FIGREC 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-18
+GETCURRDIR -- GET CURRENT DIRECTORY                         
+
+     618 0241  E8 0000 E              1  CALL FIGREC
+     619 0244  89 16 0000 E                     MOV     [DIRSEC],DX 
+     620                                        return 
+     621 0248                         1 ??0011:
+     622 0248  C3                     1  RET
+     623                                Dir_search  ENDP 
+     624                                 
+     625                                SUBTTL MAKENODE -- CREATE A NEW NODE 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-19
+MAKENODE -- CREATE A NEW NODE                               
+
+     626                                PAGE 
+     627                                        procedure   MakeNode,NEAR 
+     628 0249                         1 MakeNode PROC NEAR
+     629                                ASSUME  DS:NOTHING,ES:NOTHING 
+     630                                 
+     631                                ; Inputs: 
+     632                                ;       AL - attribute to create 
+     633                                ;       DS:SI Points to asciz path 
+     634                                ;       [THISFCB] Points to an empty FC
+					B 
+     635                                ; Function: 
+     636                                ;       Make a new node 
+     637                                ; Outputs: 
+     638                                ;       DS=DOSGROUP 
+     639                                ;       ES:BP Points to DPB 
+     640                                ;       AX = 0 Success 
+     641                                ;       AX = 1 A node by this name exis
+					ts and is a directory 
+     642                                ;       AX = 2 A new node could not be 
+					created                error 
+     643                                ;       AX = 3 A node by this name exis
+					ts and is a file       error 
+     644                                ;       AX = 4 Bad Path                
+					                       error 
+     645                                ;       AX = 5 Attribute mismatch      
+					                       error 
+     646                                ;       CARRY SET IF ERROR 
+     647                                ;       ELSE 
+     648                                ;          [DIRSTART],[DIRSEC],[CLUSFAC
+					],[CLUSNUM] set to directory 
+     649                                ;               containing new node. 
+     650                                ;          [CURBUF+2]:BX Points to entr
+					y 
+     651                                ;          [CURBUF+2]:SI Points to entr
+					y.fcb_firclus 
+     652                                ;          [ThisFCB] is filled in 
+     653                                ;          If this is a new entry zero 
+					is set and 
+     654                                ;               Attribute byte in entry
+					 is directory 
+     655                                ;          else a file existed by this 
+					name and: 
+     656                                ;               [NAME1] has name 
+     657                                ;               entry is not changed in
+					 any way 
+     658                                ; Destroys all registers 
+     659                                 
+     660 0249  50                               PUSH    AX 
+     661 024A  E8 02EB R                        CALL    GetPath 
+     662 024D  8A D1                            MOV     DL,CL           ; Save 
+					CL info 
+     663 024F  59                               POP     CX 
+     664 0250  36: 88 0E 0000 E                 MOV     BYTE PTR [ATTRIB],CL 
+     665 0255  8B C8                            MOV     CX,AX 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-20
+MAKENODE -- CREATE A NEW NODE                               
+
+     666 0257  73 0F                            JNC     make_exists     ; File 
+					existed 
+     667 0259  75 04                            JNZ     make_err_4      ; Path 
+					bad 
+     668 025B  0A D2                            OR      DL,DL           ; Check
+					 "CL" return from GETPATH 
+     669 025D  75 04                            JNZ     make_type       ; Name 
+					simply not found 
+     670 025F                           make_err_4: 
+     671 025F  B0 04                            MOV     AL,4            ; case 
+					1 bad path 
+     672 0261                           make_err_ret: 
+     673 0261  F9                               STC 
+     674                                        return 
+     675 0262                         1 ??0012:
+     676 0262  C3                     1  RET
+     677                                 
+     678 0263                           make_type: 
+     679 0263  32 C0                            XOR     AL,AL           ; nothi
+					ng exists... assume 0 
+     680 0265  F9                               STC 
+     681 0266  EB 3A                            JMP     SHORT make_save 
+     682 0268                           make_exists: 
+     683 0268  74 2C                            JZ      make_exists_dir 
+     684 026A  B0 03                            MOV     AL,3            ; file 
+					exists type 3 
+     685 026C  36: F6 06 0000 E 18              TEST    BYTE PTR [ATTRIB],(attr
+					_volume_id+attr_directory) 
+     686 0272  75 18                            JNZ     make_err_ret_5  ; but w
+					e wanted a volid or dir 
+     687 0274  0A ED                            OR      CH,CH 
+     688 0276  78 18                            JS      make_dev        ; No fu
+					rthur checks if device 
+     689 0278  51                               PUSH    CX 
+     690 0279  36: 8E 1E 0002 E                 MOV     DS,WORD PTR [CURBUF+2] 
+     691 027E  8A 6F 0B                         MOV     CH,[BX+dir_attr] ; Get 
+					file attributes 
+     692 0281  F6 C5 01                         TEST    CH,attr_read_only 
+     693 0284  75 03                            JNZ     make_err_ret_5P ; Canno
+					t create on read only files 
+     694 0286  E8 04B6 R                        CALL    MatchAttributes 
+     695 0289                           make_err_ret_5P: 
+     696 0289  59                               POP     CX 
+     697 028A  74 04                            JZ      make_dev        ; Attri
+					butes ok 
+     698 028C                           make_err_ret_5: 
+     699 028C  B0 05                            MOV     AL,5            ; Attri
+					bute mismatch 
+     700 028E  EB D1                            JMP     SHORT make_err_ret 
+     701                                 
+     702 0290                           make_dev: 
+     703 0290  32 C0                            XOR     AL,AL           ; Make 
+					sure zero set(atts match), carry clear(
+					exists) 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-21
+MAKENODE -- CREATE A NEW NODE                               
+
+     704 0292  B0 03                            MOV     AL,3            ; Resto
+					re correct value 
+     705 0294  EB 0C                            JMP     SHORT make_save 
+     706 0296                           make_exists_dir: 
+     707 0296  B0 01                            MOV     AL,1            ; direc
+					tory exists 
+     708 0298  36: F6 06 0000 E 10              TEST    BYTE PTR [ATTRIB],attr_
+					directory 
+     709 029E  74 C1                            JZ      make_err_ret    ; we di
+					dn't want a directory 
+     710 02A0  F8                               CLC 
+     711                                        return                  ; just 
+					return 
+     712 02A1                         1 ??0013:
+     713 02A1  C3                     1  RET
+     714 02A2                           make_save: 
+     715 02A2  50                               PUSH    AX 
+     716                                ; 
+     717                                ; set up for call to NewEntry - it is i
+					n the middle of FCB_CREATE 
+     718                                ; so we must also pre-push two register
+					s.  They will be popped off 
+     719                                ; by FCB_CREATE 
+     720                                ; 
+     721 02A3  16                               PUSH    SS 
+     722 02A4  1F                               POP     DS 
+     723                                        ASSUME  DS:DOSGROUP 
+     724 02A5  9C                               PUSHF                          
+					 ;Save state of flags 
+     725 02A6  80 3E 0000 E 2E                  CMP     BYTE PTR [NAME1],'.'   
+					 ;Detect attempt to make '.' or '..' 
+     726 02AB  75 05                            JNZ     NOTLDOT                
+					 ; Needed because no '.' or '..' in roo
+					t 
+     727 02AD  9D                               POPF 
+     728 02AE  B0 01                            MOV     AL,1                   
+					 ;Force type 2 error 
+     729 02B0  EB 10                            JMP     SHORT SET2ERR 
+     730                                 
+     731 02B2                           NOTLDOT: 
+     732 02B2  9D                               POPF 
+     733 02B3  06                               PUSH    ES 
+     734 02B4  C4 3E 0000 E                     LES     DI,[ThisFCB] 
+     735 02B8  1E                               PUSH    DS 
+     736 02B9  57                               PUSH    DI 
+     737 02BA  06                               PUSH    ES 
+     738 02BB  8B C1                            MOV     AX,CX 
+     739                                        invoke  NewEntry 
+     740 02BD  E8 0000 E              1  CALL NewEntry
+     741 02C0  1F                               POP     DS 
+     742 02C1  07                               POP     ES 
+     743 02C2                           SET2ERR: 
+     744 02C2  0A C0                            OR      AL,AL 
+     745 02C4  58                               POP     AX 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-22
+MAKENODE -- CREATE A NEW NODE                               
+
+     746 02C5  74 04                            JZ      make_set_fcb 
+     747 02C7  B0 02                            MOV     AL,2                ; c
+					reate failed case 2 
+     748 02C9  F9                               STC 
+     749                                        return 
+     750 02CA                         1 ??0014:
+     751 02CA  C3                     1  RET
+     752 02CB                           make_set_fcb: 
+     753                                ASSUME  DS:DOSGROUP 
+     754 02CB  06                               PUSH    ES 
+     755 02CC  C4 3E 0000 E                     LES     DI,[THISFCB] 
+     756 02D0  47                               INC     DI 
+     757 02D1  1E                               PUSH    DS 
+     758 02D2  56                               PUSH    SI 
+     759 02D3  8E 1E 0002 E                     MOV     DS,WORD PTR [CURBUF+2] 
+     760                                ASSUME  DS:NOTHING 
+     761 02D7  8B F3                            MOV     SI,BX 
+     762 02D9  B9 000B                          MOV     CX,11 
+     763 02DC  F3/ A4                           REP     MOVSB 
+     764 02DE  5E                               POP     SI 
+     765 02DF  1F                               POP     DS 
+     766                                ASSUME  DS:DOSGROUP 
+     767 02E0  07                               POP     ES 
+     768 02E1  3C 01                            CMP     AL,1 
+     769 02E3  77 04                            JA      make_errors 
+     770 02E5  0A C0                            OR      AL,AL 
+     771 02E7  F8                               CLC 
+     772                                        return 
+     773 02E8                         1 ??0015:
+     774 02E8  C3                     1  RET
+     775 02E9                           make_errors: 
+     776 02E9  F9                               STC 
+     777                                        return 
+     778 02EA                         1 ??0016:
+     779 02EA  C3                     1  RET
+     780                                 
+     781                                MakeNode    ENDP 
+     782                                 
+     783                                SUBTTL GETPATH -- PARSE AN asciz PATH 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-23
+GETPATH -- PARSE AN asciz PATH                              
+
+     784                                PAGE 
+     785                                 
+     786                                        procedure   GETPATH,near 
+     787 02EB                         1 GETPATH PROC near
+     788                                ASSUME  DS:NOTHING,ES:NOTHING 
+     789                                 
+     790                                ; Inputs: 
+     791                                ;       DS:SI Points to asciz path 
+     792                                ; Function: 
+     793                                ;       Crack the path 
+     794                                ; Outputs: 
+     795                                ;       [DRIVESPEC] is non zero if a dr
+					ive was specified 
+     796                                ;       [ROOTSTART] is non zero if a / 
+					started the path 
+     797                                ;       [ATTRIB] set to attr_directory+
+					attr_hidden+attr_system 
+     798                                ;       Same as FINDPATH except if path
+					 specifies a device in which case 
+     799                                ;       bit 7 of AH will be set and SI 
+					and BX will point DOSGROUP relative 
+     800                                ; Destroys all registers 
+     801                                 
+     802 02EB  33 C0                            XOR     AX,AX 
+     803 02ED  36: A3 0000 E                    MOV     WORD PTR [DRIVESPEC],AX
+					 
+     804 02F1  36: C6 06 0000 E 16              MOV     BYTE PTR [ATTRIB],attr_
+					directory+attr_system+attr_hidden 
+     805 02F7  AC                               LODSB 
+     806                                        invoke  PATHCHRCMP 
+     807 02F8  E8 0000 E              1  CALL PATHCHRCMP
+     808 02FB  74 43                            JZ      DEFAULTROOT 
+     809 02FD  8A E0                            MOV     AH,AL 
+     810 02FF  AC                               LODSB 
+     811 0300  3C 3A                            CMP     AL,':' 
+     812 0302  74 65                            JZ      DRVSPEC 
+     813 0304  4E                               DEC     SI 
+     814 0305  4E                               DEC     SI 
+     815 0306  1E                               PUSH    DS 
+     816 0307  56                               PUSH    SI 
+     817 0308  16                               PUSH    SS 
+     818 0309  07                               POP     ES 
+     819 030A  36: 80 3E 0000 E 00              CMP     BYTE PTR [device_availa
+					bility],0 
+     820 0310  74 05                            JZ      NOWDEV 
+     821 0312  E8 03B9 R                        CALL    GOTPRESTRING2 
+     822 0315  73 48                            JNC     BUILDFCBJ              
+					 ; If no carry then we have a device 
+     823 0317                           NOWDEV: 
+     824 0317  E8 0332 R                        CALL    DEFPATH 
+     825 031A                           GOFIND: 
+     826 031A  36: A0 0000 E                    MOV     AL,[NoSetDir] 
+     827 031E  50                               PUSH    AX 
+     828 031F  36: C6 06 0000 E 00              MOV     [NoSetDir],0 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-24
+GETPATH -- PARSE AN asciz PATH                              
+
+     829 0325  E8 01D9 R                        CALL    GETCURRDIR 
+     830 0328  58                               POP     AX 
+     831 0329  36: A2 0000 E                    MOV     [NoSetDir],AL 
+     832 032D  5E                               POP     SI 
+     833 032E  1F                               POP     DS 
+     834 032F  E9 03E6 R                        JMP     FINDPATH 
+     835                                 
+     836 0332                           DEFPATH: 
+     837 0332  32 C0                            XOR     AL,AL 
+     838 0334                           DRVPATH: 
+     839                                        invoke  GETTHISDRV 
+     840 0334  E8 0000 E              1  CALL GETTHISDRV
+     841                                        retc                    ; Bad d
+					rive 
+     842 0337  72 B1                  2  ??0017: jc ret_l
+     843 0339  16                               PUSH    SS 
+     844 033A  1F                               POP     DS 
+     845                                        invoke  FATREAD 
+     846 033B  E8 0000 E              1  CALL FATREAD
+     847 033E  F8                               CLC 
+     848                                        return 
+     849 033F                         1 ??0019:
+     850 033F  C3                     1  RET
+     851                                 
+     852 0340                           DEFAULTROOT: 
+     853 0340  1E                               PUSH    DS 
+     854 0341  56                               PUSH    SI 
+     855 0342  E8 0332 R                        CALL    DEFPATH 
+     856 0345  5E                               POP     SI 
+     857 0346  1F                               POP     DS 
+     858 0347                           ROOTSRCH: 
+     859 0347  36: FE 06 0000 E                 INC     BYTE PTR [ROOTSTART] 
+     860 034C  80 3C 00                         CMP     BYTE PTR [SI],0 
+     861 034F  74 40                            JZ      PATHISNULL 
+     862 0351  1E                               PUSH    DS 
+     863 0352  56                               PUSH    SI 
+     864 0353  06                               PUSH    ES              ; Save 
+					pointer to DPB 
+     865 0354  E8 0397 R                        CALL    CHKDEV 
+     866 0357  07                               POP     ES 
+     867 0358  73 05                            JNC     BUILDFCBJ 
+     868 035A  5E                               POP     SI 
+     869 035B  1F                               POP     DS 
+     870 035C  E9 03E1 R                        JMP     ROOTPATH 
+     871                                 
+     872 035F                           BUILDFCBJ: 
+     873 035F  58                               POP     AX 
+     874 0360  58                               POP     AX 
+     875                                        context es 
+     876 0361  16                     1  PUSH SS
+     877 0362  07                     1  POP es
+     878                                        invoke  BUILDFCB        ; Clear
+					s carry sets zero 
+     879 0363  E8 0000 E              1  CALL BUILDFCB
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-25
+GETPATH -- PARSE AN asciz PATH                              
+
+     880 0366  FE C0                            INC     AL              ; reset
+					 zero 
+     881                                        return 
+     882 0368                         1 ??001A:
+     883 0368  C3                     1  RET
+     884                                 
+     885 0369                           DRVSPEC: 
+     886 0369  36: FE 06 0000 E                 INC     [DRIVESPEC] 
+     887 036E  8A C4                            MOV     AL,AH 
+     888 0370  0C 20                            OR      AL,20H          ; Conve
+					rt to lower case 
+     889 0372  2C 60                            SUB     AL,60H          ; Make 
+					A=1 
+     890 0374  1E                               PUSH    DS 
+     891 0375  56                               PUSH    SI 
+     892 0376  50                               PUSH    AX 
+     893                                        context es 
+     894 0377  16                     1  PUSH SS
+     895 0378  07                     1  POP es
+     896 0379  E8 03B9 R                        CALL    GotPreString2 
+     897                                        ASSUME  ES:NOTHING 
+     898 037C  58                               POP     AX 
+     899 037D  73 E0                            JNC     BuildFCBJ 
+     900 037F  E8 0334 R                        CALL    DRVPATH 
+     901 0382  5E                               POP     SI 
+     902 0383  1F                               POP     DS 
+     903                                        retc                    ; Bad d
+					rive 
+     904 0384  72 E2                  2  ??001B: jc ret_l
+     905 0386  AC                               LODSB 
+     906                                        invoke  PATHCHRCMP 
+     907 0387  E8 0000 E              1  CALL PATHCHRCMP
+     908 038A  74 BB                            JZ      ROOTSRCH 
+     909 038C  4E                               DEC     SI 
+     910 038D  1E                               PUSH    DS 
+     911 038E  56                               PUSH    SI 
+     912 038F  EB 89                            JMP     GOFIND 
+     913                                 
+     914 0391                           PATHISNULL: 
+     915 0391  E8 01F7 R                        CALL    SETROOTSRCH 
+     916                                ASSUME  DS:DOSGROUP 
+     917 0394  32 C0                            XOR     AL,AL           ; Set z
+					ero (directory) clear carry 
+     918                                        return 
+     919 0396                         1 ??001D:
+     920 0396  C3                     1  RET
+     921                                 
+     922 0397                           CHKDEV: 
+     923                                ASSUME  DS:NOTHING 
+     924 0397  16                               PUSH    SS 
+     925 0398  07                               POP     ES 
+     926 0399  BF 0000 E                        MOV     DI,OFFSET DOSGROUP:DEVS
+					TRING 
+     927 039C  33 C9                            XOR     CX,CX 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-26
+GETPATH -- PARSE AN asciz PATH                              
+
+     928 039E  36: 8A 0E 0000 E                 MOV     CL,DEVSTRLEN 
+     929 03A3                           CHKPRESTRING: 
+     930 03A3  F3/ A6                           REPE    CMPSB 
+     931 03A5  74 0C                            JZ      GOTPRESTRING 
+     932 03A7  4E                               DEC     SI 
+     933                                        invoke  GETLET          ; Try c
+					onvert to upper case 
+     934 03A8  E8 0000 E              1  CALL GETLET
+     935 03AB  26: 3A 45 FF                     CMP     AL,ES:[DI-1] 
+     936 03AF  74 F2                            JZ      CHKPRESTRING 
+     937 03B1                           NOPRESTRING: 
+     938 03B1  F9                               STC 
+     939                                        return 
+     940 03B2                         1 ??001E:
+     941 03B2  C3                     1  RET
+     942                                 
+     943 03B3                           GOTPRESTRING: 
+     944 03B3  AC                               LODSB 
+     945                                        invoke  PATHCHRCMP 
+     946 03B4  E8 0000 E              1  CALL PATHCHRCMP
+     947 03B7  75 F8                            JNZ     NOPRESTRING 
+     948 03B9                           GOTPRESTRING2: 
+     949 03B9  BF 0000 E                        MOV     DI,OFFSET DOSGROUP:NAME
+					1 
+     950 03BC  B9 0009                          MOV     CX,9 
+     951 03BF                           TESTLOOP: 
+     952                                        invoke  GETLET 
+     953 03BF  E8 0000 E              1  CALL GETLET
+     954 03C2  3C 2E                            CMP     AL,'.' 
+     955 03C4  74 0E                            JZ      TESTDEVICE 
+     956                                        invoke  PATHCHRCMP 
+     957 03C6  E8 0000 E              1  CALL PATHCHRCMP
+     958 03C9  74 07                            JZ      NOTDEV 
+     959 03CB  0A C0                            OR      AL,AL 
+     960 03CD  74 05                            JZ      TESTDEVICE 
+     961 03CF  AA                               STOSB 
+     962 03D0  E2 ED                            LOOP    TESTLOOP 
+     963 03D2                           NOTDEV: 
+     964 03D2  F9                               STC 
+     965                                        return 
+     966 03D3                         1 ??001F:
+     967 03D3  C3                     1  RET
+     968                                 
+     969 03D4                           TESTDEVICE: 
+     970 03D4  83 C1 02                         ADD     CX,2 
+     971 03D7  B0 20                            MOV     AL,' ' 
+     972 03D9  F3/ AA                           REP     STOSB 
+     973 03DB  16                               PUSH    SS 
+     974 03DC  1F                               POP     DS 
+     975                                        invoke  DEVNAME 
+     976 03DD  E8 0000 E              1  CALL DEVNAME
+     977                                        return 
+     978 03E0                         1 ??0020:
+     979 03E0  C3                     1  RET
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-27
+GETPATH -- PARSE AN asciz PATH                              
+
+     980                                GETPATH ENDP 
+     981                                 
+     982                                SUBTTL ROOTPATH, FINDPATH -- PARSE A PA
+					TH 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-28
+ROOTPATH, FINDPATH -- PARSE A PATH                          
+
+     983                                PAGE 
+     984                                        procedure   ROOTPATH,near 
+     985 03E1                         1 ROOTPATH PROC near
+     986                                 
+     987                                ASSUME  DS:NOTHING,ES:NOTHING 
+     988                                 
+     989                                ; Inputs: 
+     990                                ;       ES:BP Points to DPB 
+     991                                ;       FATREAD should be called before
+					 this routine 
+     992                                ;       DS:SI Points to asciz string of
+					 path which is assumed to start at 
+     993                                ;               the root (no leading '/
+					'). 
+     994                                ; Function: 
+     995                                ;       Search from root for path 
+     996                                ; Outputs: 
+     997                                ;       Same as FINDPATH 
+     998                                ; Destroys all registers 
+     999                                 
+    1000 03E1  1E                               PUSH    DS 
+    1001 03E2  E8 01F7 R                        CALL    SETROOTSRCH 
+    1002 03E5  1F                               POP     DS 
+    1003                                 
+    1004                                ; NOTE FALL THROUGH 
+    1005                                 
+    1006                                    entry   FINDPATH 
+    1007 03E6                         1 FINDPATH:
+    1008                                ASSUME  DS:NOTHING,ES:NOTHING 
+    1009                                 
+    1010                                ; Inputs: 
+    1011                                ;       ES:BP Points to DPB 
+    1012                                ;       DS:SI Points to asciz string of
+					 path (no leading '/'). 
+    1013                                ;       [SECCLUSPOS] = 0 
+    1014                                ;       [DIRSEC] = Phys sec # of first 
+					sector of directory 
+    1015                                ;       [CLUSNUM] = Cluster # of next c
+					luster 
+    1016                                ;       [CLUSFAC] = Sectors per cluster
+					 
+    1017                                ;   Validate_path should be called befo
+					re this routine is used, 
+    1018                                ;       unless it is KNOWN the path is 
+					good. 
+    1019                                ; Function: 
+    1020                                ;       Parse path name 
+    1021                                ; Outputs: 
+    1022                                ;       ES:BP Points to DPB 
+    1023                                ;       Carry set if bad path 
+    1024                                ;          DS:SI Points to path element
+					 causing failure 
+    1025                                ;          Zero set 
+    1026                                ;             [DIRSTART],[DIRSEC],[CLUS
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-29
+ROOTPATH, FINDPATH -- PARSE A PATH                          
+
+					NUM], and [CLUSFAC] are set up to 
+    1027                                ;             start a search on the las
+					t directory 
+    1028                                ;             CL is zero if there is a 
+					bad name in the path 
+    1029                                ;             CL is non-zero if the nam
+					e was simply not found 
+    1030                                ;                [ENTFREE] may have fre
+					e spot in directory 
+    1031                                ;                [NAME1] is the name. 
+    1032                                ;                CL = 81H if '*'s or '?
+					' in name 1, 80H otherwise 
+    1033                                ;          Zero reset 
+    1034                                ;             File in middle of path or
+					 bad name in path 
+    1035                                ;               or path too long or mal
+					formed path 
+    1036                                ;       ELSE 
+    1037                                ;          DS = DOSGROUP 
+    1038                                ;          AH = device ID 
+    1039                                ;          [CURBUF] contains directory 
+					record with match 
+    1040                                ;          [CURBUF+2]:BX Points into [C
+					URBUF] to start of entry 
+    1041                                ;          [CURBUF+2]:SI Points to fcb_
+					FIRCLUS field for entry 
+    1042                                ;          [NAME1] Has entry name 
+    1043                                ;          If last element is a directo
+					ry zero is set and: 
+    1044                                ;             [DIRSTART],[SECCLUSPOS],[
+					DIRSEC],[CLUSNUM], and [CLUSFAC] 
+    1045                                ;             are set up to start a sea
+					rch on it. 
+    1046                                ;          If last element is a file ze
+					ro is reset 
+    1047                                ; Destroys all registers 
+    1048                                 
+    1049 03E6  06                               PUSH    ES 
+    1050 03E7  56                               PUSH    SI 
+    1051                                        invoke  NAMETRANS 
+    1052 03E8  E8 0000 E              1  CALL NAMETRANS
+    1053 03EB  8A C8                            MOV     CL,AL 
+    1054 03ED  80 C9 80                         OR      CL,80H 
+    1055 03F0  5F                               POP     DI 
+    1056 03F1  07                               POP     ES 
+    1057 03F2  3B F7                            CMP     SI,DI 
+    1058 03F4  75 03                            JNZ     check_device 
+    1059 03F6  E9 0483 R                        JMP     BADPATH 
+    1060 03F9                           check_device: 
+    1061 03F9  1E                               PUSH    DS 
+    1062 03FA  56                               PUSH    SI 
+    1063 03FB  8A 04                            MOV     AL,BYTE PTR [SI] 
+    1064                                 
+    1065                                ; 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-30
+ROOTPATH, FINDPATH -- PARSE A PATH                          
+
+    1066                                ; can we see all devices 
+    1067                                ; 
+    1068                                        context DS 
+    1069 03FD  16                     1  PUSH SS
+    1070 03FE  1F                     1  POP DS
+    1071 03FF  80 3E 0000 E 00                  CMP     BYTE PTR [device_availa
+					bility],0 
+    1072 0404  74 17                            JZ      FindFile 
+    1073                                 
+    1074                                ; 
+    1075                                ; check name1 to see if we have a devic
+					e... 
+    1076                                ; 
+    1077 0406  06                               PUSH    ES 
+    1078                                        context ES 
+    1079 0407  16                     1  PUSH SS
+    1080 0408  07                     1  POP ES
+    1081                                        invoke  DevName         ; blast
+					 BX 
+    1082 0409  E8 0000 E              1  CALL DevName
+    1083 040C  07                               POP     ES 
+    1084                                        ASSUME  ES:NOTHING 
+    1085 040D  72 0E                            JC      FindFile 
+    1086 040F  0A C0                            OR      AL,AL 
+    1087 0411  75 74                            JNZ     FileInPath 
+    1088 0413  5E                               POP     SI 
+    1089 0414  5E                               POP     SI 
+    1090                                        context ES 
+    1091 0415  16                     1  PUSH SS
+    1092 0416  07                     1  POP ES
+    1093                                        invoke  BuildFCB 
+    1094 0417  E8 0000 E              1  CALL BuildFCB
+    1095 041A  FE C0                            INC     AL 
+    1096                                        return 
+    1097 041C                         1 ??0021:
+    1098 041C  C3                     1  RET
+    1099                                 
+    1100 041D                           FindFile: 
+    1101                                        ASSUME  ES:NOTHING 
+    1102 041D  57                               PUSH    DI              ; Start
+					 of this element 
+    1103 041E  06                               PUSH    ES 
+    1104 041F  51                               PUSH    CX 
+    1105 0420  E8 00C0 R                        CALL    FINDENTRY 
+    1106 0423  59                               POP     CX 
+    1107 0424  07                               POP     ES 
+    1108 0425  5F                               POP     DI 
+    1109 0426  72 70                            JC      BADPATHPOP 
+    1110 0428  C5 3E 0000 E                     LDS     DI,[CURBUF] 
+    1111                                ASSUME  DS:NOTHING 
+    1112 042C  F6 47 0B 10                      TEST    BYTE PTR [BX+dir_attr],
+					attr_directory 
+    1113 0430  74 55                            JZ      FileInPath 
+    1114                                 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-31
+ROOTPATH, FINDPATH -- PARSE A PATH                          
+
+    1115                                ; 
+    1116                                ; if we are not setting the directory, 
+					then 
+    1117                                ; check for end of string 
+    1118                                ; 
+    1119 0432  36: 80 3E 0000 E 00              CMP     BYTE PTR [NoSetDir],0 
+    1120 0438  74 11                            JZ      SetDir 
+    1121 043A  8B D7                            MOV     DX,DI 
+    1122 043C  8C D8                            MOV     AX,DS 
+    1123 043E  5F                               POP     DI 
+    1124 043F  1F                               POP     DS 
+    1125 0440  80 3D 00                         CMP     BYTE PTR [DI],0 
+    1126 0443  74 50                            JZ      SetRet 
+    1127 0445  1E                               PUSH    DS 
+    1128 0446  57                               PUSH    DI 
+    1129 0447  8B FA                            MOV     DI,DX 
+    1130 0449  8E D8                            MOV     DS,AX 
+    1131                                 
+    1132 044B                           SetDir: 
+    1133 044B  8B 14                            MOV     DX,[SI] 
+    1134 044D  2B DF                            SUB     BX,DI 
+    1135 044F  2B F7                            SUB     SI,DI 
+    1136 0451  53                               PUSH    BX 
+    1137 0452  50                               PUSH    AX 
+    1138 0453  56                               PUSH    SI 
+    1139 0454  51                               PUSH    CX 
+    1140 0455  FF 75 08                         PUSH    [DI.BUFSECNO] 
+    1141 0458  8B DA                            MOV     BX,DX 
+    1142 045A  E8 021F R                        CALL    SETDIRSRCH 
+    1143                                ASSUME  DS:DOSGROUP 
+    1144 045D  5A                               POP     DX 
+    1145 045E  32 C0                            XOR     AL,AL 
+    1146                                        invoke  GETBUFFR 
+    1147 0460  E8 0000 E              1  CALL GETBUFFR
+    1148 0463  59                               POP     CX 
+    1149 0464  5E                               POP     SI 
+    1150 0465  58                               POP     AX 
+    1151 0466  5B                               POP     BX 
+    1152 0467  8B 3E 0000 E                     MOV     DI,WORD PTR [CURBUF] 
+    1153 046B  03 F7                            ADD     SI,DI 
+    1154 046D  03 DF                            ADD     BX,DI 
+    1155 046F  5F                               POP     DI 
+    1156 0470  1F                               POP     DS 
+    1157                                ASSUME  DS:NOTHING 
+    1158 0471  8A 05                            MOV     AL,[DI] 
+    1159 0473  0A C0                            OR      AL,AL 
+    1160 0475  74 1E                            JZ      SETRET 
+    1161 0477  47                               INC     DI 
+    1162 0478  8B F7                            MOV     SI,DI 
+    1163                                        invoke  PATHCHRCMP 
+    1164 047A  E8 0000 E              1  CALL PATHCHRCMP
+    1165 047D  75 03                            JNZ     find_bad_name 
+    1166 047F  E9 03E6 R                        JMP     FINDPATH 
+    1167                                 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-32
+ROOTPATH, FINDPATH -- PARSE A PATH                          
+
+    1168 0482                           find_bad_name: 
+    1169 0482  4E                               DEC     SI 
+    1170 0483                           BADPATH: 
+    1171 0483  32 C9                            XOR     CL,CL   ; Set zero 
+    1172 0485  F9                               STC 
+    1173                                        return 
+    1174 0486                         1 ??0022:
+    1175 0486  C3                     1  RET
+    1176                                 
+    1177 0487                           FILEINPATH: 
+    1178 0487  5F                               POP     DI 
+    1179 0488  1F                               POP     DS 
+    1180 0489  8A 05                            MOV     AL,[DI] 
+    1181 048B  0A C0                            OR      AL,AL 
+    1182 048D  74 04                            JZ      INCRET 
+    1183 048F  8B F7                            MOV     SI,DI   ; Path too long
+					 
+    1184 0491  F9                               STC 
+    1185                                        return 
+    1186 0492                         1 ??0023:
+    1187 0492  C3                     1  RET
+    1188                                 
+    1189 0493                           INCRET: 
+    1190 0493  FE C0                            INC     AL      ; Reset zero 
+    1191 0495                           SETRET: 
+    1192 0495  16                               PUSH    SS 
+    1193 0496  1F                               POP     DS 
+    1194                                        return 
+    1195 0497                         1 ??0024:
+    1196 0497  C3                     1  RET
+    1197                                 
+    1198 0498                           BADPATHPOP: 
+    1199 0498  5E                               POP     SI 
+    1200 0499  1F                               POP     DS 
+    1201 049A  8A 04                            MOV     AL,[SI] 
+    1202 049C  8B F7                            MOV     SI,DI   ; Start of bad 
+					element 
+    1203 049E  0A C0                            OR      AL,AL   ; zero if bad e
+					lement is last, non-zero if path too lo
+					ng 
+    1204 04A0  F9                               STC 
+    1205                                        return 
+    1206 04A1                         1 ??0025:
+    1207 04A1  C3                     1  RET
+    1208                                ROOTPATH    ENDP 
+    1209                                 
+    1210                                SUBTTL STARTSRCH -- INITIATE DIRECTORY 
+					SEARCH 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-33
+STARTSRCH -- INITIATE DIRECTORY SEARCH                      
+
+    1211                                PAGE 
+    1212                                        procedure   StartSrch,NEAR 
+    1213 04A2                         1 StartSrch PROC NEAR
+    1214                                ASSUME  DS:DOSGROUP,ES:NOTHING 
+    1215                                 
+    1216                                ; Inputs: 
+    1217                                ;       [THISDPB] Set 
+    1218                                ; Function: 
+    1219                                ;       Set up a search for GETENTRY an
+					d NEXTENTRY 
+    1220                                ; Outputs: 
+    1221                                ;       ES:BP = Drive parameters 
+    1222                                ;       Sets up LASTENT, ENDENT, ENTFRE
+					E=ENTLAST=-1, VOLID=0 
+    1223                                ; Destroys all registers (via FATREAD) 
+    1224                                 
+    1225 04A2  C4 2E 0000 E                     LES     BP,[THISDPB] 
+    1226 04A6  33 C0                            XOR     AX,AX 
+    1227 04A8  A3 0000 E                        MOV     [LASTENT],AX 
+    1228 04AB  A2 0000 E                        MOV     BYTE PTR [VOLID],AL    
+					  ; No volume ID found 
+    1229 04AE  48                               DEC     AX 
+    1230 04AF  A3 0000 E                        MOV     [ENTFREE],AX 
+    1231 04B2  A3 0000 E                        MOV     [ENTLAST],AX 
+    1232                                        return 
+    1233 04B5                         1 ??0026:
+    1234 04B5  C3                     1  RET
+    1235                                StartSrch   ENDP 
+    1236                                 
+    1237                                BREAK <MatchAttributes - the final chec
+					k for attribute matching> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Page     1-34
+MatchAttributes - the final check for attribute matching    
+
+    1238                                 
+    1239                                ; 
+    1240                                ; Input:    [Attrib] = attribute to sea
+					rch for 
+    1241                                ;           CH = found attribute 
+    1242                                ; Output:   JZ <match> 
+    1243                                ;           JNZ <nomatch> 
+    1244                                ; 
+    1245                                        procedure MatchAttributes,near 
+    1246 04B6                         1 MatchAttributes PROC near
+    1247                                        ASSUME  DS:NOTHING,ES:NOTHING 
+    1248 04B6  50                               PUSH    AX 
+    1249 04B7  36: A0 0000 E                    MOV     AL,[Attrib]         ; A
+					L <- SearchSet 
+    1250 04BB  F6 D0                            NOT     AL                  ; A
+					L <- SearchSet' 
+    1251 04BD  22 C5                            AND     AL,CH               ; A
+					L <- SearchSet' and FoundSet 
+    1252 04BF  24 16                            AND     AL,attr_all         ; A
+					L <- SearchSet' and FoundSet and Import
+					ant 
+    1253                                ; 
+    1254                                ; the result is non-zero if an attribut
+					e is not in the search set 
+    1255                                ; and in the found set and in the impor
+					tant set. This means that we do not 
+    1256                                ; have a match.  Do a JNZ <nomatch> or 
+					JZ <match> 
+    1257                                ; 
+    1258 04C1  58                               POP     AX 
+    1259                                        return 
+    1260 04C2                         1 ??0027:
+    1261 04C2  C3                     1  RET
+    1262                                MatchAttributes ENDP 
+    1263                                 
+    1264                                do_ext 
+    1265                                 
+    1266 04C3                           CODE    ENDS 
+    1267                                    END 
+
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-1
+                                                             
+
+Macros:
+
+		N a m e			Lines
+
+BREAK  . . . . . . . . . . . . .  	   2
+CONDRET  . . . . . . . . . . . .  	  19
+CONTEXT  . . . . . . . . . . . .  	   3
+DO_EXT . . . . . . . . . . . . .  	   0
+ENTRY  . . . . . . . . . . . . .  	   2
+ERROR  . . . . . . . . . . . . .  	   4
+INVOKE . . . . . . . . . . . . .  	   8
+I_AM . . . . . . . . . . . . . .  	  14
+I_NEED . . . . . . . . . . . . .  	  11
+JUMP . . . . . . . . . . . . . .  	  17
+LONG_ADDR  . . . . . . . . . . .  	   7
+MAKELAB  . . . . . . . . . . . .  	   4
+PROCEDURE  . . . . . . . . . . .  	   2
+RETC . . . . . . . . . . . . . .  	   1
+RETNC  . . . . . . . . . . . . .  	   1
+RETNZ  . . . . . . . . . . . . .  	   1
+RETURN . . . . . . . . . . . . .  	   5
+RETZ . . . . . . . . . . . . . .  	   1
+SHORT_ADDR . . . . . . . . . . .  	  12
+TRANSFER . . . . . . . . . . . .  	   8
+
+Structures and Records:
+
+                N a m e                 Width   # fields
+                                        Shift   Width   Mask    Initial
+
+ARENA  . . . . . . . . . . . . .  	0005	0003
+  ARENA_SIGNATURE  . . . . . . .  	0000
+  ARENA_OWNER  . . . . . . . . .  	0001
+  ARENA_SIZE . . . . . . . . . .  	0003
+BPBLOCK  . . . . . . . . . . . .  	000D	0008
+  BPSECSZ  . . . . . . . . . . .  	0000
+  BPCLUS . . . . . . . . . . . .  	0002
+  BPRES  . . . . . . . . . . . .  	0003
+  BPFTCNT  . . . . . . . . . . .  	0005
+  BPDRCNT  . . . . . . . . . . .  	0006
+  BPSCCNT  . . . . . . . . . . .  	0008
+  BPMEDIA  . . . . . . . . . . .  	000A
+  BPFTSEC  . . . . . . . . . . .  	000B
+BUFFINFO . . . . . . . . . . . .  	0010	0009
+  NEXTBUF  . . . . . . . . . . .  	0000
+  BUFDRV . . . . . . . . . . . .  	0004
+  BUFDIRTY . . . . . . . . . . .  	0005
+  BUFPRI . . . . . . . . . . . .  	0006
+  VISIT  . . . . . . . . . . . .  	0007
+  BUFSECNO . . . . . . . . . . .  	0008
+  BUFWRTCNT  . . . . . . . . . .  	000A
+  BUFWRTINC  . . . . . . . . . .  	000B
+  BUFDRVDP . . . . . . . . . . .  	000C
+DIR_ENTRY  . . . . . . . . . . .  	0020	0008
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-2
+                                                             
+
+  DIR_NAME . . . . . . . . . . .  	0000
+  DIR_ATTR . . . . . . . . . . .  	000B
+  DIR_PAD  . . . . . . . . . . .  	000C
+  DIR_TIME . . . . . . . . . . .  	0016
+  DIR_DATE . . . . . . . . . . .  	0018
+  DIR_FIRST  . . . . . . . . . .  	001A
+  DIR_SIZE_L . . . . . . . . . .  	001C
+  DIR_SIZE_H . . . . . . . . . .  	001E
+DPB  . . . . . . . . . . . . . .  	005E	0012
+  DPB_DRIVE  . . . . . . . . . .  	0000
+  DPB_UNIT . . . . . . . . . . .  	0001
+  DPB_SECTOR_SIZE  . . . . . . .  	0002
+  DPB_CLUSTER_MASK . . . . . . .  	0004
+  DPB_CLUSTER_SHIFT  . . . . . .  	0005
+  DPB_FIRST_FAT  . . . . . . . .  	0006
+  DPB_FAT_COUNT  . . . . . . . .  	0008
+  DPB_ROOT_ENTRIES . . . . . . .  	0009
+  DPB_FIRST_SECTOR . . . . . . .  	000B
+  DPB_MAX_CLUSTER  . . . . . . .  	000D
+  DPB_FAT_SIZE . . . . . . . . .  	000F
+  DPB_DIR_SECTOR . . . . . . . .  	0010
+  DPB_DRIVER_ADDR  . . . . . . .  	0012
+  DPB_MEDIA  . . . . . . . . . .  	0016
+  DPB_FIRST_ACCESS . . . . . . .  	0017
+  DPB_NEXT_DPB . . . . . . . . .  	0018
+  DPB_CURRENT_DIR  . . . . . . .  	001C
+  DPB_DIR_TEXT . . . . . . . . .  	001E
+EXEC0  . . . . . . . . . . . . .  	000E	0004
+  EXEC0_ENVIRON  . . . . . . . .  	0000
+  EXEC0_COM_LINE . . . . . . . .  	0002
+  EXEC0_5C_FCB . . . . . . . . .  	0006
+  EXEC0_6C_FCB . . . . . . . . .  	000A
+EXEC1  . . . . . . . . . . . . .  	0016	0008
+  EXEC1_ENVIRON  . . . . . . . .  	0000
+  EXEC1_COM_LINE . . . . . . . .  	0002
+  EXEC1_5C_FCB . . . . . . . . .  	0006
+  EXEC1_6C_FCB . . . . . . . . .  	000A
+  EXEC1_SP . . . . . . . . . . .  	000E
+  EXEC1_SS . . . . . . . . . . .  	0010
+  EXEC1_IP . . . . . . . . . . .  	0012
+  EXEC1_CS . . . . . . . . . . .  	0014
+EXEC3  . . . . . . . . . . . . .  	0004	0002
+  EXEC3_LOAD_ADDR  . . . . . . .  	0000
+  EXEC3_RELOC_FAC  . . . . . . .  	0002
+EXE_FILE . . . . . . . . . . . .  	0020	000F
+  EXE_SIGNATURE  . . . . . . . .  	0000
+  EXE_LEN_MOD_512  . . . . . . .  	0002
+  EXE_PAGES  . . . . . . . . . .  	0004
+  EXE_RLE_COUNT  . . . . . . . .  	0006
+  EXE_PAR_DIR  . . . . . . . . .  	0008
+  EXE_MIN_BSS  . . . . . . . . .  	000A
+  EXE_MAX_BSS  . . . . . . . . .  	000C
+  EXE_SS . . . . . . . . . . . .  	000E
+  EXE_SP . . . . . . . . . . . .  	0010
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-3
+                                                             
+
+  EXE_CHKSUM . . . . . . . . . .  	0012
+  EXE_IP . . . . . . . . . . . .  	0014
+  EXE_CS . . . . . . . . . . . .  	0016
+  EXE_RLE_TABLE  . . . . . . . .  	0018
+  EXE_IOV  . . . . . . . . . . .  	001A
+  EXE_SYM_TAB  . . . . . . . . .  	001C
+FIND_BUF . . . . . . . . . . . .  	002B	000C
+  FIND_BUF_SATTR . . . . . . . .  	0000
+  FIND_BUF_DRIVE . . . . . . . .  	0001
+  FIND_BUF_NAME  . . . . . . . .  	0002
+  FIND_BUF_LASTENT . . . . . . .  	000D
+  FIND_BUF_THISDPB . . . . . . .  	000F
+  FIND_BUF_DIRSTART  . . . . . .  	0013
+  FIND_BUF_ATTR  . . . . . . . .  	0015
+  FIND_BUF_TIME  . . . . . . . .  	0016
+  FIND_BUF_DATE  . . . . . . . .  	0018
+  FIND_BUF_SIZE_L  . . . . . . .  	001A
+  FIND_BUF_SIZE_H  . . . . . . .  	001C
+  FIND_BUF_PNAME . . . . . . . .  	001E
+INTERNAT_BLOCK . . . . . . . . .  	0018	0015
+  DATE_TIM_FORMAT  . . . . . . .  	0000
+  CURRENCY_SYM . . . . . . . . .  	0002
+  THOUS_SEP  . . . . . . . . . .  	0007
+  DECIMAL_SEP  . . . . . . . . .  	0009
+  DATE_SEP . . . . . . . . . . .  	000B
+  TIME_SEP . . . . . . . . . . .  	000D
+  BIT_FEILD  . . . . . . . . . .  	000F
+  CURRENCY_CENTS . . . . . . . .  	0010
+  TIME_24  . . . . . . . . . . .  	0011
+  MAP_CALL . . . . . . . . . . .  	0012
+  DATA_SEP . . . . . . . . . . .  	0016
+PROCESS_DATA_BLOCK . . . . . . .  	005B	000E
+  PDB_EXIT_CALL  . . . . . . . .  	0000
+  PDB_BLOCK_LEN  . . . . . . . .  	0002
+  PDB_CPM_CALL . . . . . . . . .  	0005
+  PDB_EXIT . . . . . . . . . . .  	000A
+  PDB_CTRL_C . . . . . . . . . .  	000E
+  PDB_FATAL_ABORT  . . . . . . .  	0012
+  PDB_PARENT_PID . . . . . . . .  	0016
+  PDB_JFN_TABLE  . . . . . . . .  	0018
+  PDB_ENVIRON  . . . . . . . . .  	002C
+  PDB_USER_STACK . . . . . . . .  	002E
+  PDB_PAD1 . . . . . . . . . . .  	0032
+  PDB_CALL_SYSTEM  . . . . . . .  	0050
+  PDB_PAD2 . . . . . . . . . . .  	0055
+SFT  . . . . . . . . . . . . . .  	0008	0003
+  SFT_LINK . . . . . . . . . . .  	0000
+  SFT_COUNT  . . . . . . . . . .  	0004
+  SFT_TABLE  . . . . . . . . . .  	0006
+SF_ENTRY . . . . . . . . . . . .  	0028	0004
+  SF_REF_COUNT . . . . . . . . .  	0000
+  SF_MODE  . . . . . . . . . . .  	0001
+  SF_ATTR  . . . . . . . . . . .  	0002
+  SF_FCB . . . . . . . . . . . .  	0003
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-4
+                                                             
+
+SRHEAD . . . . . . . . . . . . .  	000D	0005
+  REQLEN . . . . . . . . . . . .  	0000
+  REQUNIT  . . . . . . . . . . .  	0001
+  REQFUNC  . . . . . . . . . . .  	0002
+  REQSTAT  . . . . . . . . . . .  	0003
+SYMBOL_ENTRY . . . . . . . . . .  	0106	0004
+  SYM_VALUE  . . . . . . . . . .  	0000
+  SYM_TYPE . . . . . . . . . . .  	0004
+  SYM_LEN  . . . . . . . . . . .  	0006
+  SYM_NAME . . . . . . . . . . .  	0007
+SYSDEV . . . . . . . . . . . . .  	0012	0005
+  SDEVNEXT . . . . . . . . . . .  	0000
+  SDEVATT  . . . . . . . . . . .  	0004
+  SDEVSTRAT  . . . . . . . . . .  	0006
+  SDEVINT  . . . . . . . . . . .  	0008
+  SDEVNAME . . . . . . . . . . .  	000A
+SYS_FCB  . . . . . . . . . . . .  	0025	0010
+  FCB_DRIVE  . . . . . . . . . .  	0000
+  FCB_NAME . . . . . . . . . . .  	0001
+  FCB_EXT  . . . . . . . . . . .  	0009
+  FCB_EXTENT . . . . . . . . . .  	000C
+  FCB_RECSIZ . . . . . . . . . .  	000E
+  FCB_FILSIZ . . . . . . . . . .  	0010
+  FCB_DRVBP  . . . . . . . . . .  	0012
+  FCB_FDATE  . . . . . . . . . .  	0014
+  FCB_FTIME  . . . . . . . . . .  	0016
+  FCB_DEVID  . . . . . . . . . .  	0018
+  FCB_FIRCLUS  . . . . . . . . .  	0019
+  FCB_CLUSPOS  . . . . . . . . .  	001B
+  FCB_LSTCLUS  . . . . . . . . .  	001D
+  FCB_NR . . . . . . . . . . . .  	0020
+  FCB_RR . . . . . . . . . . . .  	0021
+USER_ENVIRON . . . . . . . . . .  	0018	000C
+  USER_AX  . . . . . . . . . . .  	0000
+  USER_BX  . . . . . . . . . . .  	0002
+  USER_CX  . . . . . . . . . . .  	0004
+  USER_DX  . . . . . . . . . . .  	0006
+  USER_SI  . . . . . . . . . . .  	0008
+  USER_DI  . . . . . . . . . . .  	000A
+  USER_BP  . . . . . . . . . . .  	000C
+  USER_DS  . . . . . . . . . . .  	000E
+  USER_ES  . . . . . . . . . . .  	0010
+  USER_IP  . . . . . . . . . . .  	0012
+  USER_CS  . . . . . . . . . . .  	0014
+  USER_F . . . . . . . . . . . .  	0016
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+DOSGROUP . . . . . . . . . . . .  	GROUP
+  CODE . . . . . . . . . . . . .  	04C3	BYTE	PUBLIC	'CODE'
+  CONSTANTS  . . . . . . . . . .  	0000	BYTE	PUBLIC	'CONST'
+  DATA . . . . . . . . . . . . .  	0000	BYTE	PUBLIC	'DATA'
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-5
+                                                             
+
+  LAST . . . . . . . . . . . . .  	0000	BYTE	PUBLIC	'LAST'
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+ABORT  . . . . . . . . . . . . .  	Number	0000	
+ADDINGDIR  . . . . . . . . . . .  	L NEAR	0037	CODE
+ADDR_INT_ABORT . . . . . . . . .  	Number	0080	
+ADDR_INT_COMMAND . . . . . . . .  	Number	0084	
+ADDR_INT_CTRL_C  . . . . . . . .  	Number	008C	
+ADDR_INT_DISK_READ . . . . . . .  	Number	0094	
+ADDR_INT_DISK_WRITE  . . . . . .  	Number	0098	
+ADDR_INT_FASTCON . . . . . . . .  	Number	00A4	
+ADDR_INT_FATAL_ABORT . . . . . .  	Number	0090	
+ADDR_INT_KEEP_PROCESS  . . . . .  	Number	009C	
+ADDR_INT_SPOOLER . . . . . . . .  	Number	00A0	
+ADDR_INT_TERMINATE . . . . . . .  	Number	0088	
+ALLOC  . . . . . . . . . . . . .  	Number	0048	
+ALLOCOPER  . . . . . . . . . . .  	Number	0058	
+ALLOC_ARENA_TRASHED  . . . . . .  	Alias	 ERROR_ARENA_TRASHED		
+ALLOC_NOT_ENOUGH_MEMORY  . . . .  	Alias	 ERROR_NOT_ENOUGH_MEMORY		
+ALTVECT  . . . . . . . . . . . .  	Number	0000	
+ARENA_OWNER_SYSTEM . . . . . . .  	Number	0000	
+ARENA_SIGNATURE_END  . . . . . .  	Number	005A	
+ARENA_SIGNATURE_NORMAL . . . . .  	Number	004D	
+ASSIGNOPER . . . . . . . . . . .  	Number	005F	
+ATTRIB . . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+ATTR_ALL . . . . . . . . . . . .  	Number	0016	
+ATTR_ARCHIVE . . . . . . . . . .  	Number	0020	
+ATTR_CHANGEABLE  . . . . . . . .  	Number	0027	
+ATTR_DIRECTORY . . . . . . . . .  	Number	0010	
+ATTR_HIDDEN  . . . . . . . . . .  	Number	0002	
+ATTR_IGNORE  . . . . . . . . . .  	Number	0021	
+ATTR_READ_ONLY . . . . . . . . .  	Number	0001	
+ATTR_SYSTEM  . . . . . . . . . .  	Number	0004	
+ATTR_VOLUME_ID . . . . . . . . .  	Number	0008	
+
+BADPATH  . . . . . . . . . . . .  	L NEAR	0483	CODE
+BADPATHPOP . . . . . . . . . . .  	L NEAR	0498	CODE
+BUFINSIZ . . . . . . . . . . . .  	Number	0010	
+BUILDDIR . . . . . . . . . . . .  	N PROC	0000	CODE	Global	Length = 0080
+BUILDFCBJ  . . . . . . . . . . .  	L NEAR	035F	CODE
+
+CHAR_OPER  . . . . . . . . . . .  	Number	0037	
+CHDIR  . . . . . . . . . . . . .  	Number	003B	
+CHDIR_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+CHECK_DEVICE . . . . . . . . . .  	L NEAR	03F9	CODE
+CHECK_ONE_VOLUME_ID  . . . . . .  	L NEAR	013F	CODE
+CHKDEV . . . . . . . . . . . . .  	L NEAR	0397	CODE
+CHKFNAM  . . . . . . . . . . . .  	L NEAR	00ED	CODE
+CHKPRESTRING . . . . . . . . . .  	L NEAR	03A3	CODE
+CHMOD  . . . . . . . . . . . . .  	Number	0043	
+CHMOD_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-6
+                                                             
+
+CHMOD_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+CHMOD_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+CLOSE  . . . . . . . . . . . . .  	Number	003E	
+CLOSE_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+CLOSE_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+CLUSFAC  . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+CLUSNUM  . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+COUNTRY_NOT_FOUND  . . . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+CREAT  . . . . . . . . . . . . .  	Number	003C	
+CREATENEWFILE  . . . . . . . . .  	Number	005B	
+CREATETEMPFILE . . . . . . . . .  	Number	005A	
+CREATE_PROCESS_DATA_BLOCK  . . .  	Number	0026	
+CREATING . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+CREAT_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+CREAT_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+CREAT_TOO_MANY_OPEN_FILES  . . .  	Alias	 ERROR_TOO_MANY_OPEN_FILES		
+CURBUF . . . . . . . . . . . . .  	V DWORD	0000	DATA	External
+CURDIR_INVALID_DRIVE . . . . . .  	Alias	 ERROR_INVALID_DRIVE		
+CURRENT_DIR  . . . . . . . . . .  	Number	0047	
+C_BS . . . . . . . . . . . . . .  	Number	0008	
+C_CR . . . . . . . . . . . . . .  	Number	000D	
+C_DEL  . . . . . . . . . . . . .  	Number	007F	
+C_ETB  . . . . . . . . . . . . .  	Number	0017	
+C_ETX  . . . . . . . . . . . . .  	Number	0003	
+C_HT . . . . . . . . . . . . . .  	Number	0009	
+C_LF . . . . . . . . . . . . . .  	Number	000A	
+C_NAK  . . . . . . . . . . . . .  	Number	0015	
+
+DBPBHL . . . . . . . . . . . . .  	Number	0016	
+DEALLOC  . . . . . . . . . . . .  	Number	0049	
+DEALLOC_ARENA_TRASHED  . . . . .  	Alias	 ERROR_ARENA_TRASHED		
+DEALLOC_INVALID_BLOCK  . . . . .  	Alias	 ERROR_INVALID_BLOCK		
+DEFAULTROOT  . . . . . . . . . .  	L NEAR	0340	CODE
+DEFPATH  . . . . . . . . . . . .  	L NEAR	0332	CODE
+DELALL . . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+DEVBPB . . . . . . . . . . . . .  	Number	0002	
+DEVICE_AVAILABILITY  . . . . . .  	V BYTE 	0000	DATA	External
+DEVID_BLOCK_DEV  . . . . . . . .  	Number	001F	
+DEVID_DEVICE . . . . . . . . . .  	Number	0080	
+DEVID_DEVICE_CLOCK . . . . . . .  	Number	0008	
+DEVID_DEVICE_CON_IN  . . . . . .  	Number	0001	
+DEVID_DEVICE_CON_OUT . . . . . .  	Number	0002	
+DEVID_DEVICE_EOF . . . . . . . .  	Number	0040	
+DEVID_DEVICE_NULL  . . . . . . .  	Number	0004	
+DEVID_DEVICE_RAW . . . . . . . .  	Number	0020	
+DEVID_DEVICE_SPECIAL . . . . . .  	Number	0010	
+DEVID_EOF  . . . . . . . . . . .  	Number	0040	
+DEVID_FILE_CLEAN . . . . . . . .  	Number	0040	
+DEVID_FILE_MASK_DRIVE  . . . . .  	Number	003F	
+DEVID_ISCIN  . . . . . . . . . .  	Number	0001	
+DEVID_ISCLK  . . . . . . . . . .  	Number	0008	
+DEVID_ISCOT  . . . . . . . . . .  	Number	0002	
+DEVID_ISDEV  . . . . . . . . . .  	Number	0080	
+DEVID_ISNUL  . . . . . . . . . .  	Number	0004	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-7
+                                                             
+
+DEVID_RAW  . . . . . . . . . . .  	Number	0020	
+DEVID_SPECIAL  . . . . . . . . .  	Number	0010	
+DEVIFL . . . . . . . . . . . . .  	Number	0007	
+DEVINIT  . . . . . . . . . . . .  	Number	0000	
+DEVIOCTL . . . . . . . . . . . .  	Number	4000	
+DEVIST . . . . . . . . . . . . .  	Number	0006	
+DEVMDCH  . . . . . . . . . . . .  	Number	0001	
+DEVOFL . . . . . . . . . . . . .  	Number	000B	
+DEVOST . . . . . . . . . . . . .  	Number	000A	
+DEVRD  . . . . . . . . . . . . .  	Number	0004	
+DEVRDIOCTL . . . . . . . . . . .  	Number	0003	
+DEVRDND  . . . . . . . . . . . .  	Number	0005	
+DEVSTRING  . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+DEVSTRLEN  . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+DEVTYP . . . . . . . . . . . . .  	Number	8000	
+DEVWRIOCTL . . . . . . . . . . .  	Number	000C	
+DEVWRT . . . . . . . . . . . . .  	Number	0008	
+DEVWRTV  . . . . . . . . . . . .  	Number	0009	
+DFLSHL . . . . . . . . . . . . .  	Number	000F	
+DINITHL  . . . . . . . . . . . .  	Number	001A	
+DIRPRI . . . . . . . . . . . . .  	Number	000F	
+DIRSEC . . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+DIRSTART . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+DIRSTRLEN  . . . . . . . . . . .  	Number	0040	
+DIR_SEARCH . . . . . . . . . . .  	N PROC	01D9	CODE	Global	Length = 0070
+DIR_SEARCH_FIRST . . . . . . . .  	Number	0011	
+DIR_SEARCH_NEXT  . . . . . . . .  	Number	0012	
+DISK_RESET . . . . . . . . . . .  	Number	000D	
+DMEDHL . . . . . . . . . . . . .  	Number	000F	
+DOS_MAJOR_VERSION  . . . . . . .  	Number	0002	
+DOS_MINOR_VERSION  . . . . . . .  	Number	000B	
+DPBSIZ . . . . . . . . . . . . .  	Number	005E	
+DRDNDHL  . . . . . . . . . . . .  	Number	000E	
+DRDWRHL  . . . . . . . . . . . .  	Number	0016	
+DRIVESPEC  . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+DRVPATH  . . . . . . . . . . . .  	L NEAR	0334	CODE
+DRVSPEC  . . . . . . . . . . . .  	L NEAR	0369	CODE
+DSKSIZ . . . . . . . . . . . . .  	Number	000D	
+DSTATHL  . . . . . . . . . . . .  	Number	000D	
+DUP2_INVALID_HANDLE  . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+DUP_INVALID_HANDLE . . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+DUP_PDB  . . . . . . . . . . . .  	Number	0055	
+DUP_TOO_MANY_OPEN_FILES  . . . .  	Alias	 ERROR_TOO_MANY_OPEN_FILES		
+
+ENTFREE  . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+ENTLAST  . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+ENTRYPOINT . . . . . . . . . . .  	Number	00C0	
+ERROR_ACCESS_DENIED  . . . . . .  	Number	0005	
+ERROR_ARENA_TRASHED  . . . . . .  	Number	0007	
+ERROR_BAD_ENVIRONMENT  . . . . .  	Number	000A	
+ERROR_BAD_FORMAT . . . . . . . .  	Number	000B	
+ERROR_CURRENT_DIRECTORY  . . . .  	Number	0010	
+ERROR_FILE_NOT_FOUND . . . . . .  	Number	0002	
+ERROR_INVALID_ACCESS . . . . . .  	Number	000C	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-8
+                                                             
+
+ERROR_INVALID_BLOCK  . . . . . .  	Number	0009	
+ERROR_INVALID_DATA . . . . . . .  	Number	000D	
+ERROR_INVALID_DRIVE  . . . . . .  	Number	000F	
+ERROR_INVALID_FUNCTION . . . . .  	Number	0001	
+ERROR_INVALID_HANDLE . . . . . .  	Number	0006	
+ERROR_NOT_ENOUGH_MEMORY  . . . .  	Number	0008	
+ERROR_NOT_SAME_DEVICE  . . . . .  	Number	0011	
+ERROR_NO_MORE_FILES  . . . . . .  	Number	0012	
+ERROR_PATH_NOT_FOUND . . . . . .  	Number	0003	
+ERROR_TOO_MANY_OPEN_FILES  . . .  	Number	0004	
+EVENZ  . . . . . . . . . . . . .  	L NEAR	006E	CODE
+EXEC . . . . . . . . . . . . . .  	Number	004B	
+EXEC_BAD_ENVIRONMENT . . . . . .  	Alias	 ERROR_BAD_ENVIRONMENT		
+EXEC_BAD_FORMAT  . . . . . . . .  	Alias	 ERROR_BAD_FORMAT		
+EXEC_FILE_NOT_FOUND  . . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+EXEC_FUNC_NO_EXECUTE . . . . . .  	Number	0001	
+EXEC_FUNC_OVERLAY  . . . . . . .  	Number	0002	
+EXEC_INVALID_FUNCTION  . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+EXEC_NOT_ENOUGH_MEMORY . . . . .  	Alias	 ERROR_NOT_ENOUGH_MEMORY		
+EXE_VALID_OLD_SIGNATURE  . . . .  	Number	4D5A	
+EXE_VALID_SIGNATURE  . . . . . .  	Number	5A4D	
+EXIT . . . . . . . . . . . . . .  	Number	004C	
+EXIT_ABORT . . . . . . . . . . .  	Number	0000	
+EXIT_CTRL_C  . . . . . . . . . .  	Number	0001	
+EXIT_HARD_ERROR  . . . . . . . .  	Number	0002	
+EXIT_KEEP_PROCESS  . . . . . . .  	Number	0003	
+EXIT_TERMINATE . . . . . . . . .  	Number	0000	
+
+FATPRI . . . . . . . . . . . . .  	Number	001E	
+FCB_CLOSE  . . . . . . . . . . .  	Number	0010	
+FCB_CREATE . . . . . . . . . . .  	Number	0016	
+FCB_DELETE . . . . . . . . . . .  	Number	0013	
+FCB_OPEN . . . . . . . . . . . .  	Number	000F	
+FCB_RANDOM_READ  . . . . . . . .  	Number	0021	
+FCB_RANDOM_READ_BLOCK  . . . . .  	Number	0027	
+FCB_RANDOM_WRITE . . . . . . . .  	Number	0022	
+FCB_RANDOM_WRITE_BLOCK . . . . .  	Number	0028	
+FCB_RENAME . . . . . . . . . . .  	Number	0017	
+FCB_SEQ_READ . . . . . . . . . .  	Number	0014	
+FCB_SEQ_WRITE  . . . . . . . . .  	Number	0015	
+FILDIRENT  . . . . . . . . . . .  	Number	0010	
+FILEINPATH . . . . . . . . . . .  	L NEAR	0487	CODE
+FILETIMES_INVALID_FUNCTION . . .  	Alias	 ERROR_INVALID_FUNCTION		
+FILETIMES_INVALID_HANDLE . . . .  	Alias	 ERROR_INVALID_HANDLE		
+FILE_TIMES . . . . . . . . . . .  	Number	0057	
+FILPERPROC . . . . . . . . . . .  	Number	0014	
+FINDENTRY  . . . . . . . . . . .  	L NEAR	00C0	CODE	Global
+FINDFILE . . . . . . . . . . . .  	L NEAR	041D	CODE
+FINDFIRST_FILE_NOT_FOUND . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+FINDFIRST_NO_MORE_FILES  . . . .  	Alias	 ERROR_NO_MORE_FILES		
+FINDNAME . . . . . . . . . . . .  	L NEAR	00B5	CODE	Global
+FINDNEXT_NO_MORE_FILES . . . . .  	Alias	 ERROR_NO_MORE_FILES		
+FINDPATH . . . . . . . . . . . .  	L NEAR	03E6	CODE	Global
+FIND_BAD_NAME  . . . . . . . . .  	L NEAR	0482	CODE
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-9
+                                                             
+
+FIND_FIRST . . . . . . . . . . .  	Number	004E	
+FIND_NEXT  . . . . . . . . . . .  	Number	004F	
+FOUND  . . . . . . . . . . . . .  	L NEAR	012A	CODE
+FREE . . . . . . . . . . . . . .  	L NEAR	010E	CODE
+FREEPRI  . . . . . . . . . . . .  	Number	0000	
+
+GETCURRDIR . . . . . . . . . . .  	L NEAR	01D9	CODE	Global
+GETENT . . . . . . . . . . . . .  	L NEAR	0161	CODE	Global
+GETENTRY . . . . . . . . . . . .  	L NEAR	015E	CODE	Global
+GETEXTENDEDERROR . . . . . . . .  	Number	0059	
+GETFILE  . . . . . . . . . . . .  	L NEAR	00A3	CODE	Global
+GETNAME  . . . . . . . . . . . .  	L NEAR	00B0	CODE	Global
+GETPATH  . . . . . . . . . . . .  	N PROC	02EB	CODE	Global	Length = 00F6
+GET_CURRENT_PDB  . . . . . . . .  	Number	0051	
+GET_DATE . . . . . . . . . . . .  	Number	002A	
+GET_DEFAULT_DPB  . . . . . . . .  	Number	001F	
+GET_DEFAULT_DRIVE  . . . . . . .  	Number	0019	
+GET_DMA  . . . . . . . . . . . .  	Number	002F	
+GET_DPB  . . . . . . . . . . . .  	Number	0032	
+GET_DRIVE_FREESPACE  . . . . . .  	Number	0036	
+GET_FCB_FILE_LENGTH  . . . . . .  	Number	0023	
+GET_FCB_POSITION . . . . . . . .  	Number	0024	
+GET_INDOS_FLAG . . . . . . . . .  	Number	0034	
+GET_INTERRUPT_VECTOR . . . . . .  	Number	0035	
+GET_IN_VARS  . . . . . . . . . .  	Number	0052	
+GET_TIME . . . . . . . . . . . .  	Number	002C	
+GET_VERIFY_ON_WRITE  . . . . . .  	Number	0054	
+GET_VERSION  . . . . . . . . . .  	Number	0030	
+GOFIND . . . . . . . . . . . . .  	L NEAR	031A	CODE
+GOTDIRREC  . . . . . . . . . . .  	L NEAR	004A	CODE
+GOTPRESTRING . . . . . . . . . .  	L NEAR	03B3	CODE
+GOTPRESTRING2  . . . . . . . . .  	L NEAR	03B9	CODE
+GOTRET . . . . . . . . . . . . .  	L NEAR	007E	CODE
+
+HAVIT  . . . . . . . . . . . . .  	L NEAR	01BC	CODE
+
+INCRET . . . . . . . . . . . . .  	L NEAR	0493	CODE
+INTBASE  . . . . . . . . . . . .  	Number	0080	
+INTERNATIONAL  . . . . . . . . .  	Number	0038	
+INTERNATIONAL_INVALID_FUNCTION .  	Alias	 ERROR_INVALID_FUNCTION		
+INTERNAT_BLOCK_MAX . . . . . . .  	Number	0020	
+INTTAB . . . . . . . . . . . . .  	Number	0020	
+INT_ABORT  . . . . . . . . . . .  	Alias	 INTTAB		
+INT_COMMAND  . . . . . . . . . .  	Number	0021	
+INT_CTRL_C . . . . . . . . . . .  	Number	0023	
+INT_DISK_READ  . . . . . . . . .  	Number	0025	
+INT_DISK_WRITE . . . . . . . . .  	Number	0026	
+INT_FASTCON  . . . . . . . . . .  	Number	0029	
+INT_FATAL_ABORT  . . . . . . . .  	Number	0024	
+INT_KEEP_PROCESS . . . . . . . .  	Number	0027	
+INT_SPOOLER  . . . . . . . . . .  	Number	0028	
+INT_TERMINATE  . . . . . . . . .  	Number	0022	
+IOCTL  . . . . . . . . . . . . .  	Number	0044	
+IOCTL_INVALID_DATA . . . . . . .  	Alias	 ERROR_INVALID_DATA		
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-10
+                                                             
+
+IOCTL_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+IOCTL_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+ISCIN  . . . . . . . . . . . . .  	Number	0001	
+ISCLOCK  . . . . . . . . . . . .  	Number	0008	
+ISCOUT . . . . . . . . . . . . .  	Number	0002	
+ISFATBYDEV . . . . . . . . . . .  	Number	2000	
+ISIBM  . . . . . . . . . . . . .  	Number	0010	
+ISNULL . . . . . . . . . . . . .  	Number	0004	
+
+KEEP_PROCESS . . . . . . . . . .  	Number	0031	
+
+LASTENT  . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+LBRPRI . . . . . . . . . . . . .  	Number	0002	
+LBWPRI . . . . . . . . . . . . .  	Number	0004	
+LOCKOPER . . . . . . . . . . . .  	Number	005C	
+LSEEK  . . . . . . . . . . . . .  	Number	0042	
+LSEEK_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+LSEEK_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+
+MAKENODE . . . . . . . . . . . .  	N PROC	0249	CODE	Global	Length = 00A2
+MAKE_DEV . . . . . . . . . . . .  	L NEAR	0290	CODE
+MAKE_ERRORS  . . . . . . . . . .  	L NEAR	02E9	CODE
+MAKE_ERR_4 . . . . . . . . . . .  	L NEAR	025F	CODE
+MAKE_ERR_RET . . . . . . . . . .  	L NEAR	0261	CODE
+MAKE_ERR_RET_5 . . . . . . . . .  	L NEAR	028C	CODE
+MAKE_ERR_RET_5P  . . . . . . . .  	L NEAR	0289	CODE
+MAKE_EXISTS  . . . . . . . . . .  	L NEAR	0268	CODE
+MAKE_EXISTS_DIR  . . . . . . . .  	L NEAR	0296	CODE
+MAKE_SAVE  . . . . . . . . . . .  	L NEAR	02A2	CODE
+MAKE_SET_FCB . . . . . . . . . .  	L NEAR	02CB	CODE
+MAKE_TYPE  . . . . . . . . . . .  	L NEAR	0263	CODE
+MATCHATTRIBUTES  . . . . . . . .  	N PROC	04B6	CODE	Global	Length = 000D
+MI_INT . . . . . . . . . . . . .  	Number	00CD	
+MI_LONG_CALL . . . . . . . . . .  	Number	009A	
+MI_LONG_JMP  . . . . . . . . . .  	Number	00EA	
+MI_LONG_RET  . . . . . . . . . .  	Number	00CB	
+MKDIR  . . . . . . . . . . . . .  	Number	0039	
+MKDIR_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+MKDIR_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+
+NAME1  . . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+NEWDIR . . . . . . . . . . . . .  	L NEAR	0011	CODE	Global
+NEXTENT  . . . . . . . . . . . .  	L NEAR	0103	CODE	Global
+NEXTENTRY  . . . . . . . . . . .  	L NEAR	018C	CODE	Global
+NONE . . . . . . . . . . . . . .  	L NEAR	01BA	CODE
+NOPRESTRING  . . . . . . . . . .  	L NEAR	03B1	CODE
+NOSETDIR . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+NOTDEV . . . . . . . . . . . . .  	L NEAR	03D2	CODE
+NOTFIRSTGROW . . . . . . . . . .  	L NEAR	0043	CODE
+NOTLDOT  . . . . . . . . . . . .  	L NEAR	02B2	CODE
+NOTVOLSRCH . . . . . . . . . . .  	L NEAR	00CD	CODE
+NOWDEV . . . . . . . . . . . . .  	L NEAR	0317	CODE
+NO_ERROR_OCCURRED  . . . . . . .  	Text  0                                                              ?		
+NULLDIR  . . . . . . . . . . . .  	L NEAR	001C	CODE
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-11
+                                                             
+
+NXTCLUSNUM . . . . . . . . . . .  	V WORD 	0000	DATA	External
+
+OEM_C1 . . . . . . . . . . . . .  	Number	00F9	
+OEM_C2 . . . . . . . . . . . . .  	Number	00FA	
+OEM_C3 . . . . . . . . . . . . .  	Number	00FB	
+OEM_C4 . . . . . . . . . . . . .  	Number	00FC	
+OEM_C5 . . . . . . . . . . . . .  	Number	00FD	
+OEM_C6 . . . . . . . . . . . . .  	Number	00FE	
+OEM_C7 . . . . . . . . . . . . .  	Number	00FF	
+OPEN . . . . . . . . . . . . . .  	Number	003D	
+OPEN_ACCESS_DENIED . . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+OPEN_FILE_NOT_FOUND  . . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+OPEN_FOR_BOTH  . . . . . . . . .  	Number	0002	
+OPEN_FOR_READ  . . . . . . . . .  	Number	0000	
+OPEN_FOR_WRITE . . . . . . . . .  	Number	0001	
+OPEN_INVALID_ACCESS  . . . . . .  	Alias	 ERROR_INVALID_ACCESS		
+OPEN_TOO_MANY_OPEN_FILES . . . .  	Alias	 ERROR_TOO_MANY_OPEN_FILES		
+
+PARSE_FILE_DESCRIPTOR  . . . . .  	Number	0029	
+PATHISNULL . . . . . . . . . . .  	L NEAR	0391	CODE
+
+RAW_CON_INPUT  . . . . . . . . .  	Number	0007	
+RAW_CON_IO . . . . . . . . . . .  	Number	0006	
+READ . . . . . . . . . . . . . .  	Number	003F	
+READ_ACCESS_DENIED . . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+READ_INVALID_HANDLE  . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+RENAME . . . . . . . . . . . . .  	Number	0056	
+RENAME_ACCESS_DENIED . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+RENAME_FILE_NOT_FOUND  . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+RENAME_NOT_SAME_DEVICE . . . . .  	Alias	 ERROR_NOT_SAME_DEVICE		
+RETF . . . . . . . . . . . . . .  	L NEAR	0153	CODE
+RET_C  . . . . . . . . . . . . .  	NEAR 	0384	CODE
+RET_L  . . . . . . . . . . . . .  	NEAR 	04C2	CODE
+RMDIR  . . . . . . . . . . . . .  	Number	003A	
+RMDIR_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+RMDIR_CURRENT_DIRECTORY  . . . .  	Alias	 ERROR_CURRENT_DIRECTORY		
+RMDIR_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+ROOTPATH . . . . . . . . . . . .  	N PROC	03E1	CODE	Global	Length = 00C1
+ROOTSRCH . . . . . . . . . . . .  	L NEAR	0347	CODE
+ROOTSTART  . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+RPRI . . . . . . . . . . . . . .  	Number	0006	
+
+SAMECLUS . . . . . . . . . . . .  	L NEAR	01C1	CODE
+SEARCH . . . . . . . . . . . . .  	N PROC	00A3	CODE	Global	Length = 0136
+SECCLUSPOS . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+SERVERCALL . . . . . . . . . . .  	Number	005D	
+SET2ERR  . . . . . . . . . . . .  	L NEAR	02C2	CODE
+SETBLOCK . . . . . . . . . . . .  	Number	004A	
+SETBLOCK_ARENA_TRASHED . . . . .  	Alias	 ERROR_ARENA_TRASHED		
+SETBLOCK_INVALID_BLOCK . . . . .  	Alias	 ERROR_INVALID_BLOCK		
+SETBLOCK_INVALID_FUNCTION  . . .  	Alias	 ERROR_INVALID_FUNCTION		
+SETBLOCK_NOT_ENOUGH_MEMORY . . .  	Alias	 ERROR_NOT_ENOUGH_MEMORY		
+SETCURR  . . . . . . . . . . . .  	L NEAR	0217	CODE
+SETDIR . . . . . . . . . . . . .  	L NEAR	044B	CODE
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-12
+                                                             
+
+SETDIRSRCH . . . . . . . . . . .  	L NEAR	021F	CODE	Global
+SETDOTENT  . . . . . . . . . . .  	N PROC	0080	CODE	Global	Length = 0023
+SETDPB . . . . . . . . . . . . .  	Number	0053	
+SETENTRY . . . . . . . . . . . .  	L NEAR	017E	CODE
+SETESRET . . . . . . . . . . . .  	L NEAR	015B	CODE
+SETRET . . . . . . . . . . . . .  	L NEAR	0495	CODE
+SETROOTSRCH  . . . . . . . . . .  	L NEAR	01F7	CODE
+SET_CTRL_C_TRAPPING  . . . . . .  	Number	0033	
+SET_CURRENT_PDB  . . . . . . . .  	Number	0050	
+SET_DATE . . . . . . . . . . . .  	Number	002B	
+SET_DEFAULT_DRIVE  . . . . . . .  	Number	000E	
+SET_DMA  . . . . . . . . . . . .  	Number	001A	
+SET_INTERRUPT_VECTOR . . . . . .  	Number	0025	
+SET_OEM_HANDLER  . . . . . . . .  	Number	00F8	
+SET_TIME . . . . . . . . . . . .  	Number	002D	
+SET_VERIFY_ON_WRITE  . . . . . .  	Number	002E	
+SF_DEFAULT_NUMBER  . . . . . . .  	Number	0005	
+SRCH . . . . . . . . . . . . . .  	L NEAR	00D0	CODE	Global
+STARTSRCH  . . . . . . . . . . .  	N PROC	04A2	CODE	Global	Length = 0014
+STBUI  . . . . . . . . . . . . .  	Number	0200	
+STDAUX . . . . . . . . . . . . .  	Number	0003	
+STDERR . . . . . . . . . . . . .  	Number	0002	
+STDIN  . . . . . . . . . . . . .  	Number	0000	
+STDON  . . . . . . . . . . . . .  	Number	0100	
+STDOUT . . . . . . . . . . . . .  	Number	0001	
+STDPRN . . . . . . . . . . . . .  	Number	0004	
+STD_AUX_INPUT  . . . . . . . . .  	Number	0003	
+STD_AUX_OUTPUT . . . . . . . . .  	Number	0004	
+STD_CON_INPUT  . . . . . . . . .  	Number	0001	
+STD_CON_INPUT_FLUSH  . . . . . .  	Number	000C	
+STD_CON_INPUT_NO_ECHO  . . . . .  	Number	0008	
+STD_CON_INPUT_STATUS . . . . . .  	Number	000B	
+STD_CON_OUTPUT . . . . . . . . .  	Number	0002	
+STD_CON_STRING_INPUT . . . . . .  	Number	000A	
+STD_CON_STRING_OUTPUT  . . . . .  	Number	0009	
+STD_PRINTER_OUTPUT . . . . . . .  	Number	0005	
+STECODE  . . . . . . . . . . . .  	Number	00FF	
+STERR  . . . . . . . . . . . . .  	Number	8000	
+
+TESTDEVICE . . . . . . . . . . .  	L NEAR	03D4	CODE
+TESTLOOP . . . . . . . . . . . .  	L NEAR	03BF	CODE
+THISDPB  . . . . . . . . . . . .  	V DWORD	0000	DATA	External
+THISFCB  . . . . . . . . . . . .  	V DWORD	0000	DATA	External
+TSTALL . . . . . . . . . . . . .  	L NEAR	011D	CODE
+
+UNLINK . . . . . . . . . . . . .  	Number	0041	
+UNLINK_ACCESS_DENIED . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+UNLINK_FILE_NOT_FOUND  . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+USERIDOPER . . . . . . . . . . .  	Number	005E	
+
+VOLID  . . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+
+WAIT . . . . . . . . . . . . . .  	Number	004D	
+WILDCRD  . . . . . . . . . . . .  	L NEAR	00F7	CODE
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:40
+
+DIR - Directory and path cracking                           Symbols-13
+                                                             
+
+WPRI . . . . . . . . . . . . . .  	Number	0008	
+WRECODE  . . . . . . . . . . . .  	Number	0000	
+WRITE  . . . . . . . . . . . . .  	Number	0040	
+WRITE_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+WRITE_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+
+XDUP . . . . . . . . . . . . . .  	Number	0045	
+XDUP2  . . . . . . . . . . . . .  	Number	0046	
+
+ZERODIR  . . . . . . . . . . . .  	L NEAR	0052	CODE
+
+??0000 . . . . . . . . . . . . .  	L NEAR	0010	CODE
+??0001 . . . . . . . . . . . . .  	L NEAR	0022	CODE
+??0003 . . . . . . . . . . . . .  	L NEAR	007F	CODE
+??0004 . . . . . . . . . . . . .  	L NEAR	00A2	CODE
+??0005 . . . . . . . . . . . . .  	L NEAR	00A6	CODE
+??0007 . . . . . . . . . . . . .  	L NEAR	00AF	CODE
+??0008 . . . . . . . . . . . . .  	L NEAR	00B3	CODE
+??000A . . . . . . . . . . . . .  	L NEAR	00BF	CODE
+??000B . . . . . . . . . . . . .  	L NEAR	015D	CODE
+??000C . . . . . . . . . . . . .  	L NEAR	018B	CODE
+??000D . . . . . . . . . . . . .  	L NEAR	01BB	CODE
+??000E . . . . . . . . . . . . .  	L NEAR	01C0	CODE
+??000F . . . . . . . . . . . . .  	L NEAR	0216	CODE
+??0010 . . . . . . . . . . . . .  	L NEAR	021E	CODE
+??0011 . . . . . . . . . . . . .  	L NEAR	0248	CODE
+??0012 . . . . . . . . . . . . .  	L NEAR	0262	CODE
+??0013 . . . . . . . . . . . . .  	L NEAR	02A1	CODE
+??0014 . . . . . . . . . . . . .  	L NEAR	02CA	CODE
+??0015 . . . . . . . . . . . . .  	L NEAR	02E8	CODE
+??0016 . . . . . . . . . . . . .  	L NEAR	02EA	CODE
+??0017 . . . . . . . . . . . . .  	L NEAR	0337	CODE
+??0019 . . . . . . . . . . . . .  	L NEAR	033F	CODE
+??001A . . . . . . . . . . . . .  	L NEAR	0368	CODE
+??001B . . . . . . . . . . . . .  	L NEAR	0384	CODE
+??001D . . . . . . . . . . . . .  	L NEAR	0396	CODE
+??001E . . . . . . . . . . . . .  	L NEAR	03B2	CODE
+??001F . . . . . . . . . . . . .  	L NEAR	03D3	CODE
+??0020 . . . . . . . . . . . . .  	L NEAR	03E0	CODE
+??0021 . . . . . . . . . . . . .  	L NEAR	041C	CODE
+??0022 . . . . . . . . . . . . .  	L NEAR	0486	CODE
+??0023 . . . . . . . . . . . . .  	L NEAR	0492	CODE
+??0024 . . . . . . . . . . . . .  	L NEAR	0497	CODE
+??0025 . . . . . . . . . . . . .  	L NEAR	04A1	CODE
+??0026 . . . . . . . . . . . . .  	L NEAR	04B5	CODE
+??0027 . . . . . . . . . . . . .  	L NEAR	04C2	CODE
+
+
+   2395 Source  Lines
+   3247 Total   Lines
+    689 Symbols
+
+  16598 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

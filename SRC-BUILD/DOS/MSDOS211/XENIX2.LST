@@ -1,0 +1,1736 @@
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-1
+                                                            
+
+       1                                ; 
+       2                                ; xenix file calls for MSDOS 
+       3                                ; 
+       4                                 
+       5                             C  INCLUDE DOSSEG.ASM 
+       6                             C  ; 
+       7                             C  ; segment ordering for MSDOS 
+       8                             C  ; 
+       9                             C   
+      10 0000                        C  CONSTANTS       SEGMENT BYTE PUBLIC 'CO
+					NST' 
+      11 0000                        C  CONSTANTS       ENDS 
+      12                             C   
+      13 0000                        C  DATA            SEGMENT BYTE PUBLIC 'DA
+					TA' 
+      14 0000                        C  DATA            ENDS 
+      15                             C   
+      16 0000                        C  CODE            SEGMENT BYTE PUBLIC 'CO
+					DE' 
+      17 0000                        C  CODE            ENDS 
+      18                             C   
+      19 0000                        C  LAST            SEGMENT BYTE PUBLIC 'LA
+					ST' 
+      20 0000                        C  LAST            ENDS 
+      21                             C   
+      22                             C  DOSGROUP    GROUP   CODE,CONSTANTS,DATA
+					,LAST 
+      23                                 
+      24                                 
+      25                                ENDIF 
+      26                                 
+      27 0000                           CODE    SEGMENT BYTE PUBLIC  'CODE' 
+      28                                        ASSUME  SS:DOSGROUP,CS:DOSGROUP
+					 
+      29                                 
+      30                                .list 
+      31                                 
+      32                                TITLE   XENIX - IO system to mimic UNIX
+					 
+      33                                NAME    XENIX 
+      34                                 
+      35                                        i_need  NoSetDir,BYTE 
+      36 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      37 0000                         1  DATA ENDS
+      38                                        i_need  CURDRV,BYTE 
+      39 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      40 0000                         1  DATA ENDS
+      41                                        i_need  IOCALL,BYTE 
+      42 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      43 0000                         1  DATA ENDS
+      44                                        i_need  IOMED,BYTE 
+      45 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      46 0000                         1  DATA ENDS
+      47                                        i_need  IOSCNT,WORD 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-2
+DEVICE TABLE AND SRH DEFINITION                             
+
+      48 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      49 0000                         1  DATA ENDS
+      50                                        i_need  IOXAD,DWORD 
+      51 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      52 0000                         1  DATA ENDS
+      53                                        i_need  DIRSTART,WORD 
+      54 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      55 0000                         1  DATA ENDS
+      56                                        i_need  ATTRIB,BYTE 
+      57 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      58 0000                         1  DATA ENDS
+      59                                        i_need  THISFCB,DWORD 
+      60 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      61 0000                         1  DATA ENDS
+      62                                        i_need  AuxStack,BYTE 
+      63 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      64 0000                         1  DATA ENDS
+      65                                        i_need  Creating,BYTE 
+      66 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      67 0000                         1  DATA ENDS
+      68                                        i_need  ThisDRV,BYTE 
+      69 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      70 0000                         1  DATA ENDS
+      71                                        i_need  NAME1,BYTE 
+      72 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      73 0000                         1  DATA ENDS
+      74                                        i_need  LastEnt,WORD 
+      75 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      76 0000                         1  DATA ENDS
+      77                                        i_need  ThisDPB,DWORD 
+      78 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      79 0000                         1  DATA ENDS
+      80                                        i_need  EntLast,WORD 
+      81 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      82 0000                         1  DATA ENDS
+      83                                        i_need  CurrentPDB,WORD 
+      84 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      85 0000                         1  DATA ENDS
+      86                                        i_need  sft_addr,DWORD         
+					     ; pointer to head of table 
+      87 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      88 0000                         1  DATA ENDS
+      89                                        i_need  CURBUF,DWORD           
+					     ; pointer to current buffer 
+      90 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      91 0000                         1  DATA ENDS
+      92                                        i_need  DMAADD,DWORD           
+					     ; pointer to current dma address 
+      93 0000                         1  DATA SEGMENT BYTE PUBLIC 'DATA'
+      94 0000                         1  DATA ENDS
+      95                                 
+      96                                BREAK <Local data> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-3
+Local data                                                  
+
+      97                                 
+      98 0000                           CODE        ENDS 
+      99 0000                           DATA        SEGMENT BYTE PUBLIC 'DATA' 
+     100                                 
+     101                                 
+     102 0000  ????                     PushSave    DW      ? 
+     103 0002  ????                     PushES      DW      ? 
+     104 0004  ????                     PushBX      DW      ? 
+     105                                 
+     106 0006  ????                     xenix_count     DW      ? 
+     107                                 
+     108 0008                           DATA        ENDS 
+     109 0000                           CODE        SEGMENT BYTE PUBLIC 'CODE' 
+     110                                 
+     111                                 
+     112                                BREAK <get_sf_from_sfn - translate a sf
+					n into sf pointer> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-4
+get_sf_from_sfn - translate a sfn into sf pointer           
+
+     113                                ; 
+     114                                ; get_sf_from_sfn 
+     115                                ; input:    AX has sfn (0 based) 
+     116                                ;           DS is DOSGROUP 
+     117                                ; output:   JNC <found> 
+     118                                ;               ES:DI is sf entry 
+     119                                ;           JC  <error> 
+     120                                ;               ES,DI indeterminate 
+     121                                ; 
+     122                                        procedure   get_sf_from_sfn,NEA
+					R 
+     123 0000                         1 get_sf_from_sfn PROC NEAR
+     124                                        ASSUME  DS:DOSGROUP,ES:NOTHING 
+     125 0000  50                               PUSH    AX                     
+					 ; we trash AX in process 
+     126 0001  C4 3E 0000 E                     LES     DI,[sft_addr] 
+     127                                 
+     128 0005                           get_sfn_loop: 
+     129 0005  83 FF FF                         CMP     DI,-1                  
+					 ; end of chain of tables? 
+     130 0008  74 1E                            JZ      get_sf_invalid         
+					 ; I guess so... 
+     131 000A  26: 2B 45 04                     SUB     AX,ES:[DI].sft_count   
+					 ; chop number of entries in this table
+					 
+     132 000E  7C 05                            JL      get_sf_gotten          
+					 ; sfn is in this table 
+     133 0010  26: C4 3D                        LES     DI,ES:[DI].sft_link    
+					 ; step to next table 
+     134 0013  EB F0                            JMP     get_sfn_loop 
+     135                                 
+     136 0015                           get_sf_gotten: 
+     137 0015  26: 03 45 04                     ADD     AX,ES:[DI].sft_count   
+					 ; reset to index in this table 
+     138 0019  53                               PUSH    BX 
+     139 001A  BB 0028                          MOV     BX,SIZE sf_entry 
+     140 001D  F6 E3                            MUL     BL                     
+					 ; number of bytes offset into table 
+     141 001F  5B                               POP     BX 
+     142 0020  05 0006                          ADD     AX,sft_table           
+					 ; offset into sf table structure 
+     143 0023  03 F8                            ADD     DI,AX                  
+					 ; offset into memory 
+     144 0025  F8                               CLC 
+     145 0026  EB 01                            JMP     SHORT get_sf_ret 
+     146                                 
+     147 0028                           get_sf_jfn_invalid: 
+     148 0028                           get_sf_invalid: 
+     149 0028  F9                               STC 
+     150                                 
+     151 0029                           get_sf_jfn_ret: 
+     152 0029                           get_sf_ret: 
+     153 0029  58                               POP     AX                     
+					 ; remember him? 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-5
+get_sf_from_sfn - translate a sfn into sf pointer           
+
+     154 002A  C3                               RET 
+     155                                get_sf_from_sfn ENDP 
+     156                                 
+     157                                BREAK <get_sf_from_jfn - translate a jf
+					n into sf pointer> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-6
+get_sf_from_jfn - translate a jfn into sf pointer           
+
+     158                                ; 
+     159                                ; get_sf_from_jfn 
+     160                                ; input:    BX is jfn 0 based 
+     161                                ;           DS is DOSGROUP 
+     162                                ; output:   JNC <found> 
+     163                                ;               ES:DI is sf entry 
+     164                                ;           JC  <error> 
+     165                                ;               ES,DI is indeterminate 
+     166                                ; 
+     167                                        procedure   get_sf_from_jfn,NEA
+					R 
+     168 002B                         1 get_sf_from_jfn PROC NEAR
+     169                                        ASSUME  DS:DOSGROUP,ES:NOTHING 
+     170 002B  50                               PUSH    AX                     
+					 ; save him 
+     171                                        invoke  get_jfn_pointer 
+     172 002C  E8 003F R              1  CALL get_jfn_pointer
+     173 002F  72 F7                            JC      get_sf_jfn_invalid 
+     174 0031  26: 8A 05                        MOV     AL,ES:[DI]             
+					 ; get sfn 
+     175 0034  3C FF                            CMP     AL,0FFh                
+					 ; is it free? 
+     176 0036  74 F0                            JZ      get_sf_jfn_invalid     
+					 ; yep... error 
+     177 0038  32 E4                            XOR     AH,AH 
+     178                                        invoke  get_sf_from_sfn        
+					 ; check this sfn out... 
+     179 003A  E8 0000 R              1  CALL get_sf_from_sfn
+     180 003D  EB EA                            JMP     SHORT get_sf_jfn_ret   
+					 ; condition codes are properly set 
+     181                                 
+     182                                get_sf_from_jfn ENDP 
+     183                                 
+     184                                BREAK <get_jfn_pointer - map a jfn into
+					 a pointer to jfn> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-7
+get_jfn_pointer - map a jfn into a pointer to jfn           
+
+     185                                ; 
+     186                                ; get_jfn_pointer 
+     187                                ; input:    BX is jfn 
+     188                                ;           DS is DOSGROUP 
+     189                                ; output:   JNC <found> 
+     190                                ;               ES:DI is pointer to jfn
+					 
+     191                                ;           JC  <bad jfn> 
+     192                                ; 
+     193                                        procedure   Get_jfn_pointer,NEA
+					R 
+     194 003F                         1 Get_jfn_pointer PROC NEAR
+     195                                        ASSUME  DS:DOSGROUP,ES:NOTHING 
+     196 003F  83 FB 14                         CMP     BX,FilPerProc 
+     197 0042  73 0B                            JAE     get_jfn_bad 
+     198 0044  8E 06 0000 E                     MOV     ES,[CurrentPDB] 
+     199 0048  8B FB                            MOV     DI,BX 
+     200 004A  83 C7 18                         ADD     DI,PDB_JFN_Table 
+     201 004D  F8                               CLC 
+     202 004E  C3                               RET 
+     203                                 
+     204 004F                           get_jfn_bad: 
+     205 004F  F9                               STC 
+     206 0050  C3                               RET 
+     207                                get_jfn_pointer ENDP 
+     208                                 
+     209                                 
+     210                                BREAK <$Close - release a handle> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-8
+$Close - release a handle                                   
+
+     211                                ; 
+     212                                ;   Assembler usage: 
+     213                                ;           MOV     BX, handle 
+     214                                ;           MOV     AH, Close 
+     215                                ;           INT     int_command 
+     216                                ; 
+     217                                ;   Error return: 
+     218                                ;           AX = error_invalid_handle 
+     219                                ; 
+     220                                        procedure   $Close,NEAR 
+     221 0051                         1 $Close PROC NEAR
+     222                                        ASSUME  DS:NOTHING,ES:NOTHING 
+     223                                 
+     224                                        context DS 
+     225 0051  16                     1  PUSH SS
+     226 0052  1F                     1  POP DS
+     227                                 
+     228                                        invoke  get_jfn_pointer        
+					 ; get jfn loc 
+     229 0053  E8 003F R              1  CALL get_jfn_pointer
+     230 0056  73 05                            JNC     close_jfn 
+     231 0058                           close_bad_handle: 
+     232                                        error   error_invalid_handle 
+     233 0058  B0 06                  1  MOV AL,error_invalid_handle
+     234 005A                         3  ??0001:
+     235 005A  E9 0000 E              3  JMP SYS_RET_ERR
+     236                                 
+     237 005D                           close_jfn: 
+     238 005D  26: 8A 05                        MOV     AL,BYTE PTR ES:[DI] 
+     239 0060  3C FF                            CMP     AL,0FFh 
+     240 0062  74 F4                            JE      close_bad_handle 
+     241 0064  26: C6 05 FF                     MOV     BYTE PTR ES:[DI],0FFh; 
+     242 0068  32 E4                            XOR     AH,AH 
+     243                                        invoke  get_sf_from_sfn 
+     244 006A  E8 0000 R              1  CALL get_sf_from_sfn
+     245 006D  72 E9                            JC      close_bad_handle 
+     246 006F  06                               PUSH    ES 
+     247 0070  1F                               POP     DS 
+     248                                        ASSUME  DS:NOTHING 
+     249 0071  FE 0D                            DEC     [DI].sf_ref_count      
+					 ; no more reference 
+     250 0073  8D 55 03                         LEA     DX,[DI].sf_fcb 
+     251                                ; 
+     252                                ; need to restuff Attrib if we are clos
+					ing a protected file 
+     253                                ; 
+     254 0076  F6 45 1B C0                      TEST    [DI.sf_fcb.fcb_DevID],d
+					evid_file_clean+devid_device 
+     255 007A  75 17                            JNZ     close_ok 
+     256 007C  FF 75 02                         PUSH    WORD PTR [DI].sf_attr 
+     257                                        invoke  MOVNAMENOSET 
+     258 007F  E8 0000 E              1  CALL MOVNAMENOSET
+     259 0082  5B                               POP     BX 
+     260 0083  36: 88 1E 0000 E                 MOV     [Attrib],BL 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-9
+$Close - release a handle                                   
+
+     261                                        invoke  FCB_CLOSE_INNER 
+     262 0088  E8 0000 E              1  CALL FCB_CLOSE_INNER
+     263 008B  3C FF                            CMP     AL,0FFh                
+					 ; file not found error? 
+     264 008D  75 04                            JNZ     close_ok 
+     265                                        error   error_file_not_found 
+     266 008F  B0 02                  1  MOV AL,error_file_not_found
+     267 0091                         3  ??0003:
+     268 0091  EB C7                  3  JMP SYS_RET_ERR_J
+     269 0093                           close_ok: 
+     270                                        transfer    SYS_RET_OK 
+     271 0093                         2  ??0004:
+     272 0093  E9 0000 E              2  JMP SYS_RET_OK
+     273                                 
+     274                                $Close  ENDP 
+     275                                 
+     276                                 
+     277                                BREAK <PushDMA, PopDMA, ptr_normalize -
+					 set up local dma and save old> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-10
+PushDMA, PopDMA, ptr_normalize - set up local dma and save o
+
+     278                                ; PushDMA 
+     279                                ; input:    DS:DX is DMA 
+     280                                ; output:   DS:DX is normalized , ES:BX
+					 destroyed 
+     281                                ;           [DMAADD] is now set up to D
+					S:DX 
+     282                                ;           old DMA is pushed 
+     283                                 
+     284                                        procedure   PushDMA,NEAR 
+     285 0096                         1 PushDMA PROC NEAR
+     286                                        ASSUME  DS:NOTHING,ES:NOTHING 
+     287                                 
+     288 0096  36: 8C 06 0002 R                 MOV     PushES,ES 
+     289 009B  36: 89 1E 0004 R                 MOV     PushBX,BX 
+     290 00A0  36: 8F 06 0000 R                 POP     PushSave 
+     291 00A5  36: C4 1E 0000 E                 LES     BX,DWORD PTR [DMAADD]  
+					 ; get old dma 
+     292 00AA  06                               PUSH    ES 
+     293 00AB  53                               PUSH    BX 
+     294 00AC  36: FF 36 0000 R                 PUSH    PushSave 
+     295                                        invoke  ptr_normalize          
+					 ; get new dma 
+     296 00B1  E8 00DE R              1  CALL ptr_normalize
+     297 00B4  36: 89 16 0000 E                 MOV     WORD PTR [DMAADD],DX   
+					 ; save IT! 
+     298 00B9  36: 8C 1E 0002 E                 MOV     WORD PTR [DMAADD+2],DS 
+     299 00BE  36: 8E 06 0002 R                 MOV     ES,PushES 
+     300 00C3  36: 8B 1E 0004 R                 MOV     BX,PushBX 
+     301 00C8  C3                               RET 
+     302                                PushDMA ENDP 
+     303                                 
+     304                                ; PopDMA 
+     305                                ; input:    old DMA under ret address o
+					n stack 
+     306                                ; output:   [DMAADD] set to old version
+					 and stack popped 
+     307                                        procedure   PopDMA,NEAR 
+     308 00C9                         1 PopDMA PROC NEAR
+     309                                        ASSUME  DS:NOTHING,ES:NOTHING 
+     310                                 
+     311 00C9  36: 8F 06 0000 R                 POP     PushSave 
+     312 00CE  36: 8F 06 0000 E                 POP     WORD PTR [DMAADD] 
+     313 00D3  36: 8F 06 0002 E                 POP     WORD PTR [DMAADD+2] 
+     314 00D8  36: FF 36 0000 R                 PUSH    PushSave 
+     315 00DD  C3                               RET 
+     316                                PopDMA  ENDP 
+     317                                 
+     318                                ; ptr_normalize 
+     319                                ; input:    DS:DX is a pointer 
+     320                                ; output:   DS:DX is normalized (DX < 1
+					0h) 
+     321                                        procedure   ptr_normalize,NEAR 
+     322 00DE                         1 ptr_normalize PROC NEAR
+     323 00DE  51                               PUSH    CX                     
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-11
+PushDMA, PopDMA, ptr_normalize - set up local dma and save o
+
+					 ; T1 = CX 
+     324 00DF  52                               PUSH    DX                     
+					 ; T2 = DX 
+     325 00E0  B1 04                            MOV     CL,4 
+     326 00E2  D3 EA                            SHR     DX,CL                  
+					 ; DX = (DX >> 4)    (using CX) 
+     327 00E4  8C D9                            MOV     CX,DS 
+     328 00E6  03 CA                            ADD     CX,DX 
+     329 00E8  8E D9                            MOV     DS,CX                  
+					 ; DS = DS + DX      (using CX) 
+     330 00EA  5A                               POP     DX 
+     331 00EB  81 E2 000F                       AND     DX,0Fh                 
+					 ; DX = T2 & 0Fh 
+     332 00EF  59                               POP     CX                     
+					 ; CX = T1 
+     333                                 
+     334                                ;       PUSH    AX 
+     335                                ;       PUSH    DX 
+     336                                ;       MOV     AX,DS 
+     337                                ;       PUSH    CX 
+     338                                ;       MOV     CL,4 
+     339                                ;       SHR     DX,CL                  
+					 ; get upper part of dx 
+     340                                ;       POP     CX 
+     341                                ;       ADD     AX,DX                  
+					 ; add into seg address 
+     342                                ;       MOV     DS,AX 
+     343                                ;       POP     DX 
+     344                                ;       AND     DX,0Fh                 
+					 ; save low part 
+     345                                ;       POP     AX 
+     346                                 
+     347 00F0  C3                               RET 
+     348                                ptr_normalize   ENDP 
+     349                                 
+     350                                BREAK <$Read - Do file/device I/O> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-12
+$Read - Do file/device I/O                                  
+
+     351                                ; 
+     352                                ;   Assembler usage: 
+     353                                ;           LDS     DX, buf 
+     354                                ;           MOV     CX, count 
+     355                                ;           MOV     BX, handle 
+     356                                ;           MOV     AH, Read 
+     357                                ;           INT     int_command 
+     358                                ;         AX has number of bytes read 
+     359                                ;   Errors: 
+     360                                ;           AX = read_invalid_handle 
+     361                                ;              = read_access_denied 
+     362                                ; 
+     363                                 
+     364                                        procedure   $Read,NEAR 
+     365 00F1                         1 $Read PROC NEAR
+     366                                        ASSUME  DS:NOTHING,ES:NOTHING 
+     367                                 
+     368                                        invoke  PushDMA 
+     369 00F1  E8 0096 R              1  CALL PushDMA
+     370 00F4  E8 0132 R                        CALL    IO_setup 
+     371 00F7  72 09                            JC      IO_err 
+     372 00F9  26: 80 7D 01 01                  CMP     ES:[DI].sf_mode,open_fo
+					r_write 
+     373 00FE  75 07                            JNE     read_setup 
+     374 0100                           IO_bad_mode: 
+     375 0100  B0 05                            MOV     AL,read_access_denied 
+     376 0102                           IO_err: 
+     377                                        invoke  PopDMA 
+     378 0102  E8 00C9 R              1  CALL PopDMA
+     379                                        transfer    SYS_RET_ERR 
+     380 0105                         2  ??0005:
+     381 0105  EB 8A                  2  JMP SYS_RET_ERR_J
+     382                                 
+     383 0107                           read_setup: 
+     384                                        invoke  $FCB_RANDOM_READ_BLOCK 
+					 ; do read 
+     385 0107  E8 0000 E              1  CALL $FCB_RANDOM_READ_BLOCK
+     386 010A                           IO_done: 
+     387                                        invoke  get_user_stack         
+					 ; get old frame 
+     388 010A  E8 0000 E              1  CALL get_user_stack
+     389 010D  8B 44 04                         MOV     AX,[SI].user_CX        
+					 ; get returned CX 
+     390 0110  36: 8B 0E 0006 R                 MOV     CX,xenix_count 
+     391 0115  89 4C 04                         MOV     [SI].user_CX,CX        
+					 ; stash our CX 
+     392                                        invoke  PopDMA                 
+					 ; get old DMA 
+     393 0118  E8 00C9 R              1  CALL PopDMA
+     394                                        transfer    SYS_RET_OK 
+     395 011B                         2  ??0006:
+     396 011B  E9 0000 E              2  JMP SYS_RET_OK
+     397                                $Read   ENDP 
+     398                                 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-13
+$Read - Do file/device I/O                                  
+
+     399                                BREAK <$Write - Do file/device I/O> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-14
+$Write - Do file/device I/O                                 
+
+     400                                ; 
+     401                                ;   Assembler usage: 
+     402                                ;           LDS     DX, buf 
+     403                                ;           MOV     CX, count 
+     404                                ;           MOV     BX, handle 
+     405                                ;           MOV     AH, Write 
+     406                                ;           INT     int_command 
+     407                                ;         AX has number of bytes writte
+					n 
+     408                                ;   Errors: 
+     409                                ;           AX = write_invalid_handle 
+     410                                ;              = write_access_denied 
+     411                                ; 
+     412                                 
+     413                                        procedure   $Write,NEAR 
+     414 011E                         1 $Write PROC NEAR
+     415                                        ASSUME  DS:NOTHING,ES:NOTHING 
+     416                                 
+     417                                        invoke  PushDMA 
+     418 011E  E8 0096 R              1  CALL PushDMA
+     419 0121  E8 0132 R                        CALL    IO_setup 
+     420 0124  72 DC                            JC      IO_err 
+     421 0126  26: 80 7D 01 00                  CMP     ES:[DI].sf_mode,open_fo
+					r_read 
+     422 012B  74 D3                            JE      IO_bad_mode 
+     423                                        invoke  $FCB_RANDOM_WRITE_BLOCK
+					 ; do write 
+     424 012D  E8 0000 E              1  CALL $FCB_RANDOM_WRITE_BLOCK
+     425 0130  EB D8                            JMP     IO_done 
+     426                                 
+     427                                $write  ENDP 
+     428                                 
+     429 0132                           IO_setup: 
+     430                                        ASSUME  DS:NOTHING,ES:NOTHING 
+     431                                        context DS 
+     432 0132  16                     1  PUSH SS
+     433 0133  1F                     1  POP DS
+     434 0134  89 0E 0006 R                     MOV     xenix_count,CX 
+     435                                        invoke  Get_sf_from_jfn 
+     436 0138  E8 002B R              1  CALL Get_sf_from_jfn
+     437                                        ; ES:DI is sf pointer 
+     438 013B  B0 06                            MOV     AL,read_invalid_handle 
+					         ;Assume an error 
+     439 013D  8B 0E 0006 R                     MOV     CX,xenix_count 
+     440 0141  8D 55 03                         LEA     DX,[DI].sf_fcb 
+     441 0144  06                               PUSH    ES 
+     442 0145  1F                               POP     DS 
+     443                                        ASSUME  DS:NOTHING 
+     444 0146  C3                               RET 
+     445                                 
+     446                                BREAK <$LSEEK - set random record field
+					> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-15
+$LSEEK - set random record field                            
+
+     447                                ; 
+     448                                ;   Assembler usage: 
+     449                                ;           MOV     DX, offsetlow 
+     450                                ;           MOV     CX, offsethigh 
+     451                                ;           MOV     BX, handle 
+     452                                ;           MOV     AL, method 
+     453                                ;           MOV     AH, LSeek 
+     454                                ;           INT     int_command 
+     455                                ;         DX:AX has the new location of
+					 the pointer 
+     456                                ;   Error returns: 
+     457                                ;           AX = error_invalid_handle 
+     458                                ;              = error_invalid_function
+					 
+     459                                        procedure   $LSEEK,NEAR 
+     460 0147                         1 $LSEEK PROC NEAR
+     461                                        ASSUME  DS:NOTHING,ES:NOTHING 
+     462 0147  3C 03                            CMP     AL,3 
+     463 0149  72 04                            JB      lseek_get_sf 
+     464                                        error   error_invalid_function 
+     465 014B  B0 01                  1  MOV AL,error_invalid_function
+     466 014D                         3  ??0008:
+     467 014D  EB B6                  3  JMP SYS_RET_ERR_J
+     468                                 
+     469 014F                           lseek_get_sf: 
+     470                                        context DS 
+     471 014F  16                     1  PUSH SS
+     472 0150  1F                     1  POP DS
+     473                                        invoke  get_sf_from_jfn 
+     474 0151  E8 002B R              1  CALL get_sf_from_jfn
+     475 0154  06                               PUSH    ES 
+     476 0155  1F                               POP     DS 
+     477                                        ASSUME  DS:NOTHING 
+     478 0156  72 3D                            JC      lseek_bad 
+     479                                ; 
+     480                                ; don't seek device 
+     481                                ; 
+     482 0158  F6 45 1B 80                      TEST    [DI.sf_fcb+fcb_devid],d
+					evid_device 
+     483 015C  74 06                            JZ      lseek_dispatch 
+     484 015E  33 C0                            XOR     AX,AX 
+     485 0160  33 D2                            XOR     DX,DX 
+     486 0162  EB 16                            JMP     SHORT lseek_ret 
+     487 0164                           lseek_dispatch: 
+     488 0164  FE C8                            DEC     AL 
+     489 0166  7C 0F                            JL      lseek_beginning 
+     490 0168  FE C8                            DEC     AL 
+     491 016A  7C 1E                            JL      lseek_current 
+     492                                ; move from end of file 
+     493                                ; first, get end of file 
+     494 016C  92                               XCHG    AX,DX               ; A
+					X <- low 
+     495 016D  87 D1                            XCHG    DX,CX               ; D
+					X <- high 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-16
+$LSEEK - set random record field                            
+
+     496                                        ASSUME  DS:NOTHING 
+     497 016F  03 45 13                         ADD     AX,[DI+sf_fcb+fcb_FILSI
+					Z] 
+     498 0172  13 55 15                         ADC     DX,[DI+sf_fcb+fcb_FILSI
+					Z+2] 
+     499 0175  EB 03                            JMP     SHORT lseek_ret 
+     500                                 
+     501 0177                           lseek_beginning: 
+     502 0177  92                               XCHG    AX,DX               ; A
+					X <- low 
+     503 0178  87 D1                            XCHG    DX,CX               ; D
+					X <- high 
+     504                                 
+     505 017A                           lseek_ret: 
+     506 017A  89 45 24                         MOV     WORD PTR [DI+sf_fcb+fcb
+					_RR],AX 
+     507 017D  89 55 26                         MOV     WORD PTR [DI+sf_fcb+fcb
+					_RR+2],DX 
+     508                                        invoke  get_user_stack 
+     509 0180  E8 0000 E              1  CALL get_user_stack
+     510 0183  89 54 06                         MOV     [SI.user_DX],DX 
+     511 0186  89 04                            MOV     [SI.user_AX],AX 
+     512                                        transfer    SYS_RET_OK 
+     513 0188                         2  ??0009:
+     514 0188  EB 91                  2  JMP SYS_RET_OK_J
+     515                                 
+     516 018A                           lseek_current: 
+     517                                ; ES:DI is pointer to sf... need to inv
+					oke  set random record for place 
+     518 018A  92                               XCHG    AX,DX               ; A
+					X <- low 
+     519 018B  87 D1                            XCHG    DX,CX               ; D
+					X <- high 
+     520 018D  03 45 24                         ADD     AX,WORD PTR [DI+sf_fcb+
+					fcb_RR] 
+     521 0190  13 55 26                         ADC     DX,WORD PTR [DI+sf_fcb+
+					fcb_RR+2] 
+     522 0193  EB E5                            JMP     lseek_ret 
+     523                                 
+     524 0195                           lseek_bad: 
+     525                                        error   error_invalid_handle 
+     526 0195  B0 06                  1  MOV AL,error_invalid_handle
+     527 0197                         3  ??000B:
+     528 0197  EB B4                  3  JMP SYS_RET_ERR_J
+     529                                $lseek  ENDP 
+     530                                 
+     531                                 
+     532                                BREAK <$IOCTL - return/set device depen
+					dent stuff> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-17
+$IOCTL - return/set device dependent stuff                  
+
+     533                                ; 
+     534                                ;   Assembler usage: 
+     535                                ;           MOV     BX, Handle 
+     536                                ;           MOV     DX, Data 
+     537                                ; 
+     538                                ;       (or LDS     DX,BUF 
+     539                                ;           MOV     CX,COUNT) 
+     540                                ; 
+     541                                ;           MOV     AH, Ioctl 
+     542                                ;           MOV     AL, Request 
+     543                                ;           INT     21h 
+     544                                ; 
+     545                                ;   Error returns: 
+     546                                ;           AX = error_invalid_handle 
+     547                                ;              = error_invalid_function
+					 
+     548                                ;              = error_invalid_data 
+     549                                 
+     550                                        procedure   $IOCTL,NEAR 
+     551 0199                         1 $IOCTL PROC NEAR
+     552                                        ASSUME  DS:NOTHING,ES:NOTHING 
+     553 0199  8C DE                            MOV     SI,DS                  
+					 ;Stash DS for calls 2,3,4 and 5 
+     554                                        context DS 
+     555 019B  16                     1  PUSH SS
+     556 019C  1F                     1  POP DS
+     557 019D  3C 03                            CMP     AL,3 
+     558 019F  77 50                            JA      ioctl_check_block      
+					 ;Block device 
+     559 01A1  52                               PUSH    DX 
+     560                                        invoke  get_sf_from_jfn 
+     561 01A2  E8 002B R              1  CALL get_sf_from_jfn
+     562 01A5  5A                               POP     DX                     
+					 ;Restore DATA 
+     563 01A6  73 04                            JNC     ioctl_check_permissions
+					 ; have valid handle 
+     564                                        error   error_invalid_handle 
+     565 01A8  B0 06                  1  MOV AL,error_invalid_handle
+     566 01AA                         3  ??000D:
+     567 01AA  EB EB                  3  JMP SYS_RET_ERR_J
+     568                                 
+     569 01AC                           ioctl_check_permissions: 
+     570 01AC  3C 02                            CMP     AL,2 
+     571 01AE  73 32                            JAE     ioctl_control_string 
+     572 01B0  3C 00                            CMP     AL,0 
+     573 01B2  26: 8A 45 1B                     MOV     AL,BYTE PTR ES:[DI+sf_f
+					cb+fcb_devid] 
+     574 01B6  74 12                            JZ      ioctl_read             
+					 ; read the byte 
+     575 01B8  0A F6                            OR      DH,DH 
+     576 01BA  74 04                            JZ      ioctl_check_device     
+					 ; can I set with this data? 
+     577                                        error   error_invalid_data     
+					 ; no DH <> 0 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-18
+$IOCTL - return/set device dependent stuff                  
+
+     578 01BC  B0 0D                  1  MOV AL,error_invalid_data
+     579 01BE                         3  ??000F:
+     580 01BE  EB EA                  3  JMP SYS_RET_ERR_J
+     581                                 
+     582 01C0                           ioctl_check_device: 
+     583 01C0  A8 80                            TEST    AL,devid_ISDEV         
+					 ; can I set this handle? 
+     584 01C2  74 55                            JZ      ioctl_bad_fun          
+					 ; no, it is a file. 
+     585 01C4  26: 88 55 1B                     MOV     BYTE PTR ES:[DI+sf_fcb+
+					fcb_devid],DL 
+     586                                        transfer    SYS_RET_OK 
+     587 01C8                         2  ??0010:
+     588 01C8  EB BE                  2  JMP SYS_RET_OK_J
+     589                                 
+     590 01CA                           ioctl_read: 
+     591 01CA  32 E4                            XOR     AH,AH 
+     592 01CC  A8 80                            TEST    AL,devid_ISDEV         
+					 ; Should I set high byte 
+     593 01CE  74 08                            JZ      ioctl_no_high          
+					 ; no 
+     594 01D0  26: C4 7D 1C                     LES     DI,DWORD PTR ES:[DI+sf_
+					fcb+fcb_FIRCLUS]  ;Get device pointer 
+     595 01D4  26: 8A 65 05                     MOV     AH,BYTE PTR ES:[DI.SDEV
+					ATT+1]   ;Get high byte 
+     596 01D8                           ioctl_no_high: 
+     597                                        invoke  get_user_stack 
+     598 01D8  E8 0000 E              1  CALL get_user_stack
+     599 01DB  8B D0                            MOV     DX,AX 
+     600 01DD  89 54 06                         MOV     [SI.user_DX],DX 
+     601                                        transfer    SYS_RET_OK 
+     602 01E0                         2  ??0011:
+     603 01E0  EB E6                  2  JMP SYS_RET_OK_J
+     604                                 
+     605 01E2                           ioctl_control_string: 
+     606 01E2  26: F6 45 1B 80                  TEST    BYTE PTR ES:[DI+sf_fcb+
+					fcb_devid],devid_ISDEV   ; can I? 
+     607 01E7  74 30                            JZ      ioctl_bad_fun          
+					 ; no, it is a file. 
+     608 01E9  26: C4 7D 1C                     LES     DI,DWORD PTR ES:[DI+sf_
+					fcb+fcb_FIRCLUS]  ;Get device pointer 
+     609 01ED  32 DB                            XOR     BL,BL           ; Unit 
+					number of char dev = 0 
+     610 01EF  EB 4D                            JMP     SHORT ioctl_do_string 
+     611                                 
+     612 01F1                           ioctl_check_block: 
+     613 01F1  FE C8                            DEC     AL 
+     614 01F3  FE C8                            DEC     AL                     
+					 ;4=2,5=3,6=4,7=5 
+     615 01F5  3C 03                            CMP     AL,3 
+     616 01F7  76 28                            JBE     ioctl_get_dev 
+     617                                 
+     618 01F9  B4 01                            MOV     AH,1 
+     619 01FB  2C 04                            SUB     AL,4                   
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-19
+$IOCTL - return/set device dependent stuff                  
+
+					 ;6=0,7=1 
+     620 01FD  74 06                            JZ      ioctl_get_status 
+     621 01FF  B4 03                            MOV     AH,3 
+     622 0201  FE C8                            DEC     AL 
+     623 0203  75 14                            JNZ     ioctl_bad_fun 
+     624                                 
+     625 0205                           ioctl_get_status: 
+     626 0205  50                               PUSH    AX 
+     627                                        invoke  GET_IO_FCB 
+     628 0206  E8 0000 E              1  CALL GET_IO_FCB
+     629 0209  58                               POP     AX 
+     630 020A  72 11                            JC      ioctl_acc_err 
+     631                                        invoke  IOFUNC 
+     632 020C  E8 0000 E              1  CALL IOFUNC
+     633 020F  8A E0                            MOV     AH,AL 
+     634 0211  B0 FF                            MOV     AL,0FFH 
+     635 0213  75 02                            JNZ     ioctl_status_ret 
+     636 0215  FE C0                            INC     AL 
+     637 0217                           ioctl_status_ret: 
+     638                                        transfer SYS_RET_OK 
+     639 0217                         2  ??0012:
+     640 0217  EB C7                  2  JMP SYS_RET_OK_J
+     641                                 
+     642 0219                           ioctl_bad_fun: 
+     643                                        error   error_invalid_function 
+     644 0219  B0 01                  1  MOV AL,error_invalid_function
+     645 021B                         3  ??0014:
+     646 021B  EB A1                  3  JMP SYS_RET_ERR_J
+     647                                 
+     648 021D                           ioctl_acc_err: 
+     649                                        error   error_access_denied 
+     650 021D  B0 05                  1  MOV AL,error_access_denied
+     651 021F                         3  ??0016:
+     652 021F  EB FA                  3  JMP SYS_RET_ERR_J
+     653                                 
+     654 0221                           ioctl_get_dev: 
+     655 0221  51                               PUSH    CX 
+     656 0222  52                               PUSH    DX 
+     657 0223  50                               PUSH    AX 
+     658 0224  56                               PUSH    SI              ;DS in 
+					disguise 
+     659 0225  8A C3                            MOV     AL,BL           ;Drive 
+     660                                        invoke  GETTHISDRV 
+     661 0227  E8 0000 E              1  CALL GETTHISDRV
+     662 022A  72 0C                            JC      ioctl_bad_drv 
+     663                                        invoke  FATREAD         ;"get" 
+					the drive 
+     664 022C  E8 0000 E              1  CALL FATREAD
+     665 022F  26: 8A 5E 01                     MOV     BL,ES:[BP.dpb_UNIT]    
+					 ; Unit number 
+     666 0233  26: C4 7E 12                     LES     DI,ES:[BP.dpb_driver_ad
+					dr] 
+     667 0237  F8                               CLC                     ;Make s
+					ure error jump not taken 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-20
+$IOCTL - return/set device dependent stuff                  
+
+     668 0238                           ioctl_bad_drv: 
+     669 0238  5E                               POP     SI 
+     670 0239  58                               POP     AX 
+     671 023A  5A                               POP     DX 
+     672 023B  59                               POP     CX 
+     673 023C  72 DF                            JC      ioctl_acc_err 
+     674 023E                           ioctl_do_string: 
+     675 023E  26: F7 45 04 4000                TEST    ES:[DI.SDEVATT],DEVIOCT
+					L        ;See if device accepts control
+					 
+     676 0244  74 D3                            JZ      ioctl_bad_fun          
+					         ;NO 
+     677 0246  FE C8                            DEC     AL 
+     678 0248  FE C8                            DEC     AL 
+     679 024A  74 07                            JZ      ioctl_control_read 
+     680 024C  C6 06 0002 E 0C                  MOV     [IOCALL.REQFUNC],DEVWRI
+					OCTL 
+     681 0251  EB 05                            JMP     SHORT ioctl_control_cal
+					l 
+     682 0253                           ioctl_control_read: 
+     683 0253  C6 06 0002 E 03                  MOV     [IOCALL.REQFUNC],DEVRDI
+					OCTL 
+     684 0258                           ioctl_control_call: 
+     685 0258  B0 16                            MOV     AL,DRDWRHL 
+     686 025A  8A E3                            MOV     AH,BL                  
+					         ;Unit number 
+     687 025C  A3 0000 E                        MOV     WORD PTR [IOCALL.REQLEN
+					],AX 
+     688 025F  33 C0                            XOR     AX,AX 
+     689 0261  A3 0003 E                        MOV     [IOCALL.REQSTAT],AX 
+     690 0264  A2 0000 E                        MOV     [IOMED],AL 
+     691 0267  89 0E 0000 E                     MOV     [IOSCNT],CX 
+     692 026B  89 16 0000 E                     MOV     WORD PTR [IOXAD],DX 
+     693 026F  89 36 0002 E                     MOV     WORD PTR [IOXAD+2],SI 
+     694 0273  06                               PUSH    ES 
+     695 0274  1F                               POP     DS 
+     696                                ASSUME  DS:NOTHING 
+     697 0275  8B F7                            MOV     SI,DI                  
+					 ;DS:SI -> driver 
+     698 0277  16                               PUSH    SS 
+     699 0278  07                               POP     ES 
+     700 0279  BB 0000 E                        MOV     BX,OFFSET DOSGROUP:IOCA
+					LL       ;ES:BX -> Call header 
+     701                                        invoke  DEVIOCALL2 
+     702 027C  E8 0000 E              1  CALL DEVIOCALL2
+     703 027F  36: A1 0000 E                    MOV     AX,[IOSCNT]            
+					 ;Get actual bytes transferred 
+     704                                        transfer    SYS_RET_OK 
+     705 0283                         2  ??0017:
+     706 0283  EB 92                  2  JMP SYS_RET_OK_J
+     707                                 
+     708                                $IOCTL  ENDP 
+     709                                 
+     710                                BREAK <File_Times - modify write times 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-21
+$IOCTL - return/set device dependent stuff                  
+
+					on a handle> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-22
+File_Times - modify write times on a handle                 
+
+     711                                ; 
+     712                                ;   Assembler usage: 
+     713                                ;           MOV AH, FileTimes 
+     714                                ;           MOV AL, func 
+     715                                ;           MOV BX, handle 
+     716                                ;       ; if AL = 1 then then next two 
+					are mandatory 
+     717                                ;           MOV CX, time 
+     718                                ;           MOV DX, date 
+     719                                ;           INT 21h 
+     720                                ;       ; if AL = 0 then CX/DX has the 
+					last write time/date 
+     721                                ;       ; for the handle. 
+     722                                ; 
+     723                                ;   Error returns: 
+     724                                ;           AX = error_invalid_function
+					 
+     725                                ;              = error_invalid_handle 
+     726                                ; 
+     727                                procedure   $File_times,near 
+     728 0285                         1 $File_times PROC near
+     729 0285  3C 02                            CMP     AL,2 
+     730 0287  72 04                            JB      filetimes_ok 
+     731                                        error   error_invalid_function 
+     732 0289  B0 01                  1  MOV AL,error_invalid_function
+     733 028B                         3  ??0019:
+     734 028B  EB 92                  3  JMP SYS_RET_ERR_J
+     735                                 
+     736 028D                           filetimes_ok: 
+     737 028D  16                               PUSH    SS 
+     738 028E  1F                               POP     DS 
+     739 028F  E8 002B R                        CALL    Get_sf_from_jfn 
+     740 0292  73 04                            JNC     filetimes_disp 
+     741                                        error   error_invalid_handle 
+     742 0294  B0 06                  1  MOV AL,error_invalid_handle
+     743 0296                         3  ??001B:
+     744 0296  EB F3                  3  JMP SYS_RET_ERR_J
+     745                                 
+     746 0298                           filetimes_disp: 
+     747 0298  0A C0                            OR      AL,AL 
+     748 029A  75 13                            JNZ     filetimes_set 
+     749 029C  26: 8B 4D 19                     MOV     CX,ES:[DI.sf_fcb.fcb_FT
+					IME] 
+     750 02A0  26: 8B 55 17                     MOV     DX,ES:[DI.sf_fcb.fcb_FD
+					ATE] 
+     751                                        invoke  Get_user_stack 
+     752 02A4  E8 0000 E              1  CALL Get_user_stack
+     753 02A7  89 4C 04                         MOV     [SI.user_CX],CX 
+     754 02AA  89 54 06                         MOV     [SI.user_DX],DX 
+     755                                        transfer    SYS_RET_OK 
+     756 02AD                         2  ??001C:
+     757 02AD  EB D4                  2  JMP SYS_RET_OK_J
+     758                                 
+     759 02AF                           filetimes_set: 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Page     1-23
+File_Times - modify write times on a handle                 
+
+     760 02AF  26: 89 4D 19                     MOV     ES:[DI.sf_fcb.fcb_FTIME
+					],CX 
+     761 02B3  26: 89 55 17                     MOV     ES:[DI.sf_fcb.fcb_FDATE
+					],DX 
+     762 02B7  26: 80 65 1B BF                  AND     ES:[DI.sf_fcb.fcb_DEVID
+					],NOT devid_file_clean 
+     763                                        transfer    SYS_RET_OK 
+     764 02BC                         2  ??001D:
+     765 02BC  EB EF                  2  JMP SYS_RET_OK_J
+     766                                $file_times ENDP 
+     767                                 
+     768                                do_ext 
+     769                                 
+     770 02BE                           CODE    ENDS 
+     771                                    END 
+
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-1
+                                                             
+
+Macros:
+
+		N a m e			Lines
+
+BREAK  . . . . . . . . . . . . .  	   2
+CONDRET  . . . . . . . . . . . .  	  19
+CONTEXT  . . . . . . . . . . . .  	   3
+DO_EXT . . . . . . . . . . . . .  	   0
+ENTRY  . . . . . . . . . . . . .  	   2
+ERROR  . . . . . . . . . . . . .  	   4
+INVOKE . . . . . . . . . . . . .  	   8
+I_AM . . . . . . . . . . . . . .  	  14
+I_NEED . . . . . . . . . . . . .  	  11
+JUMP . . . . . . . . . . . . . .  	  17
+LONG_ADDR  . . . . . . . . . . .  	   7
+MAKELAB  . . . . . . . . . . . .  	   4
+PROCEDURE  . . . . . . . . . . .  	   2
+RETC . . . . . . . . . . . . . .  	   1
+RETNC  . . . . . . . . . . . . .  	   1
+RETNZ  . . . . . . . . . . . . .  	   1
+RETURN . . . . . . . . . . . . .  	   5
+RETZ . . . . . . . . . . . . . .  	   1
+SHORT_ADDR . . . . . . . . . . .  	  12
+TRANSFER . . . . . . . . . . . .  	   8
+
+Structures and Records:
+
+                N a m e                 Width   # fields
+                                        Shift   Width   Mask    Initial
+
+ARENA  . . . . . . . . . . . . .  	0005	0003
+  ARENA_SIGNATURE  . . . . . . .  	0000
+  ARENA_OWNER  . . . . . . . . .  	0001
+  ARENA_SIZE . . . . . . . . . .  	0003
+BPBLOCK  . . . . . . . . . . . .  	000D	0008
+  BPSECSZ  . . . . . . . . . . .  	0000
+  BPCLUS . . . . . . . . . . . .  	0002
+  BPRES  . . . . . . . . . . . .  	0003
+  BPFTCNT  . . . . . . . . . . .  	0005
+  BPDRCNT  . . . . . . . . . . .  	0006
+  BPSCCNT  . . . . . . . . . . .  	0008
+  BPMEDIA  . . . . . . . . . . .  	000A
+  BPFTSEC  . . . . . . . . . . .  	000B
+BUFFINFO . . . . . . . . . . . .  	0010	0009
+  NEXTBUF  . . . . . . . . . . .  	0000
+  BUFDRV . . . . . . . . . . . .  	0004
+  BUFDIRTY . . . . . . . . . . .  	0005
+  BUFPRI . . . . . . . . . . . .  	0006
+  VISIT  . . . . . . . . . . . .  	0007
+  BUFSECNO . . . . . . . . . . .  	0008
+  BUFWRTCNT  . . . . . . . . . .  	000A
+  BUFWRTINC  . . . . . . . . . .  	000B
+  BUFDRVDP . . . . . . . . . . .  	000C
+DIR_ENTRY  . . . . . . . . . . .  	0020	0008
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-2
+                                                             
+
+  DIR_NAME . . . . . . . . . . .  	0000
+  DIR_ATTR . . . . . . . . . . .  	000B
+  DIR_PAD  . . . . . . . . . . .  	000C
+  DIR_TIME . . . . . . . . . . .  	0016
+  DIR_DATE . . . . . . . . . . .  	0018
+  DIR_FIRST  . . . . . . . . . .  	001A
+  DIR_SIZE_L . . . . . . . . . .  	001C
+  DIR_SIZE_H . . . . . . . . . .  	001E
+DPB  . . . . . . . . . . . . . .  	005E	0012
+  DPB_DRIVE  . . . . . . . . . .  	0000
+  DPB_UNIT . . . . . . . . . . .  	0001
+  DPB_SECTOR_SIZE  . . . . . . .  	0002
+  DPB_CLUSTER_MASK . . . . . . .  	0004
+  DPB_CLUSTER_SHIFT  . . . . . .  	0005
+  DPB_FIRST_FAT  . . . . . . . .  	0006
+  DPB_FAT_COUNT  . . . . . . . .  	0008
+  DPB_ROOT_ENTRIES . . . . . . .  	0009
+  DPB_FIRST_SECTOR . . . . . . .  	000B
+  DPB_MAX_CLUSTER  . . . . . . .  	000D
+  DPB_FAT_SIZE . . . . . . . . .  	000F
+  DPB_DIR_SECTOR . . . . . . . .  	0010
+  DPB_DRIVER_ADDR  . . . . . . .  	0012
+  DPB_MEDIA  . . . . . . . . . .  	0016
+  DPB_FIRST_ACCESS . . . . . . .  	0017
+  DPB_NEXT_DPB . . . . . . . . .  	0018
+  DPB_CURRENT_DIR  . . . . . . .  	001C
+  DPB_DIR_TEXT . . . . . . . . .  	001E
+EXEC0  . . . . . . . . . . . . .  	000E	0004
+  EXEC0_ENVIRON  . . . . . . . .  	0000
+  EXEC0_COM_LINE . . . . . . . .  	0002
+  EXEC0_5C_FCB . . . . . . . . .  	0006
+  EXEC0_6C_FCB . . . . . . . . .  	000A
+EXEC1  . . . . . . . . . . . . .  	0016	0008
+  EXEC1_ENVIRON  . . . . . . . .  	0000
+  EXEC1_COM_LINE . . . . . . . .  	0002
+  EXEC1_5C_FCB . . . . . . . . .  	0006
+  EXEC1_6C_FCB . . . . . . . . .  	000A
+  EXEC1_SP . . . . . . . . . . .  	000E
+  EXEC1_SS . . . . . . . . . . .  	0010
+  EXEC1_IP . . . . . . . . . . .  	0012
+  EXEC1_CS . . . . . . . . . . .  	0014
+EXEC3  . . . . . . . . . . . . .  	0004	0002
+  EXEC3_LOAD_ADDR  . . . . . . .  	0000
+  EXEC3_RELOC_FAC  . . . . . . .  	0002
+EXE_FILE . . . . . . . . . . . .  	0020	000F
+  EXE_SIGNATURE  . . . . . . . .  	0000
+  EXE_LEN_MOD_512  . . . . . . .  	0002
+  EXE_PAGES  . . . . . . . . . .  	0004
+  EXE_RLE_COUNT  . . . . . . . .  	0006
+  EXE_PAR_DIR  . . . . . . . . .  	0008
+  EXE_MIN_BSS  . . . . . . . . .  	000A
+  EXE_MAX_BSS  . . . . . . . . .  	000C
+  EXE_SS . . . . . . . . . . . .  	000E
+  EXE_SP . . . . . . . . . . . .  	0010
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-3
+                                                             
+
+  EXE_CHKSUM . . . . . . . . . .  	0012
+  EXE_IP . . . . . . . . . . . .  	0014
+  EXE_CS . . . . . . . . . . . .  	0016
+  EXE_RLE_TABLE  . . . . . . . .  	0018
+  EXE_IOV  . . . . . . . . . . .  	001A
+  EXE_SYM_TAB  . . . . . . . . .  	001C
+FIND_BUF . . . . . . . . . . . .  	002B	000C
+  FIND_BUF_SATTR . . . . . . . .  	0000
+  FIND_BUF_DRIVE . . . . . . . .  	0001
+  FIND_BUF_NAME  . . . . . . . .  	0002
+  FIND_BUF_LASTENT . . . . . . .  	000D
+  FIND_BUF_THISDPB . . . . . . .  	000F
+  FIND_BUF_DIRSTART  . . . . . .  	0013
+  FIND_BUF_ATTR  . . . . . . . .  	0015
+  FIND_BUF_TIME  . . . . . . . .  	0016
+  FIND_BUF_DATE  . . . . . . . .  	0018
+  FIND_BUF_SIZE_L  . . . . . . .  	001A
+  FIND_BUF_SIZE_H  . . . . . . .  	001C
+  FIND_BUF_PNAME . . . . . . . .  	001E
+INTERNAT_BLOCK . . . . . . . . .  	0018	0015
+  DATE_TIM_FORMAT  . . . . . . .  	0000
+  CURRENCY_SYM . . . . . . . . .  	0002
+  THOUS_SEP  . . . . . . . . . .  	0007
+  DECIMAL_SEP  . . . . . . . . .  	0009
+  DATE_SEP . . . . . . . . . . .  	000B
+  TIME_SEP . . . . . . . . . . .  	000D
+  BIT_FEILD  . . . . . . . . . .  	000F
+  CURRENCY_CENTS . . . . . . . .  	0010
+  TIME_24  . . . . . . . . . . .  	0011
+  MAP_CALL . . . . . . . . . . .  	0012
+  DATA_SEP . . . . . . . . . . .  	0016
+PROCESS_DATA_BLOCK . . . . . . .  	005B	000E
+  PDB_EXIT_CALL  . . . . . . . .  	0000
+  PDB_BLOCK_LEN  . . . . . . . .  	0002
+  PDB_CPM_CALL . . . . . . . . .  	0005
+  PDB_EXIT . . . . . . . . . . .  	000A
+  PDB_CTRL_C . . . . . . . . . .  	000E
+  PDB_FATAL_ABORT  . . . . . . .  	0012
+  PDB_PARENT_PID . . . . . . . .  	0016
+  PDB_JFN_TABLE  . . . . . . . .  	0018
+  PDB_ENVIRON  . . . . . . . . .  	002C
+  PDB_USER_STACK . . . . . . . .  	002E
+  PDB_PAD1 . . . . . . . . . . .  	0032
+  PDB_CALL_SYSTEM  . . . . . . .  	0050
+  PDB_PAD2 . . . . . . . . . . .  	0055
+SFT  . . . . . . . . . . . . . .  	0008	0003
+  SFT_LINK . . . . . . . . . . .  	0000
+  SFT_COUNT  . . . . . . . . . .  	0004
+  SFT_TABLE  . . . . . . . . . .  	0006
+SF_ENTRY . . . . . . . . . . . .  	0028	0004
+  SF_REF_COUNT . . . . . . . . .  	0000
+  SF_MODE  . . . . . . . . . . .  	0001
+  SF_ATTR  . . . . . . . . . . .  	0002
+  SF_FCB . . . . . . . . . . . .  	0003
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-4
+                                                             
+
+SRHEAD . . . . . . . . . . . . .  	000D	0005
+  REQLEN . . . . . . . . . . . .  	0000
+  REQUNIT  . . . . . . . . . . .  	0001
+  REQFUNC  . . . . . . . . . . .  	0002
+  REQSTAT  . . . . . . . . . . .  	0003
+SYMBOL_ENTRY . . . . . . . . . .  	0106	0004
+  SYM_VALUE  . . . . . . . . . .  	0000
+  SYM_TYPE . . . . . . . . . . .  	0004
+  SYM_LEN  . . . . . . . . . . .  	0006
+  SYM_NAME . . . . . . . . . . .  	0007
+SYSDEV . . . . . . . . . . . . .  	0012	0005
+  SDEVNEXT . . . . . . . . . . .  	0000
+  SDEVATT  . . . . . . . . . . .  	0004
+  SDEVSTRAT  . . . . . . . . . .  	0006
+  SDEVINT  . . . . . . . . . . .  	0008
+  SDEVNAME . . . . . . . . . . .  	000A
+SYS_FCB  . . . . . . . . . . . .  	0025	0010
+  FCB_DRIVE  . . . . . . . . . .  	0000
+  FCB_NAME . . . . . . . . . . .  	0001
+  FCB_EXT  . . . . . . . . . . .  	0009
+  FCB_EXTENT . . . . . . . . . .  	000C
+  FCB_RECSIZ . . . . . . . . . .  	000E
+  FCB_FILSIZ . . . . . . . . . .  	0010
+  FCB_DRVBP  . . . . . . . . . .  	0012
+  FCB_FDATE  . . . . . . . . . .  	0014
+  FCB_FTIME  . . . . . . . . . .  	0016
+  FCB_DEVID  . . . . . . . . . .  	0018
+  FCB_FIRCLUS  . . . . . . . . .  	0019
+  FCB_CLUSPOS  . . . . . . . . .  	001B
+  FCB_LSTCLUS  . . . . . . . . .  	001D
+  FCB_NR . . . . . . . . . . . .  	0020
+  FCB_RR . . . . . . . . . . . .  	0021
+USER_ENVIRON . . . . . . . . . .  	0018	000C
+  USER_AX  . . . . . . . . . . .  	0000
+  USER_BX  . . . . . . . . . . .  	0002
+  USER_CX  . . . . . . . . . . .  	0004
+  USER_DX  . . . . . . . . . . .  	0006
+  USER_SI  . . . . . . . . . . .  	0008
+  USER_DI  . . . . . . . . . . .  	000A
+  USER_BP  . . . . . . . . . . .  	000C
+  USER_DS  . . . . . . . . . . .  	000E
+  USER_ES  . . . . . . . . . . .  	0010
+  USER_IP  . . . . . . . . . . .  	0012
+  USER_CS  . . . . . . . . . . .  	0014
+  USER_F . . . . . . . . . . . .  	0016
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+DOSGROUP . . . . . . . . . . . .  	GROUP
+  CODE . . . . . . . . . . . . .  	02BE	BYTE	PUBLIC	'CODE'
+  CONSTANTS  . . . . . . . . . .  	0000	BYTE	PUBLIC	'CONST'
+  DATA . . . . . . . . . . . . .  	0008	BYTE	PUBLIC	'DATA'
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-5
+                                                             
+
+  LAST . . . . . . . . . . . . .  	0000	BYTE	PUBLIC	'LAST'
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+ABORT  . . . . . . . . . . . . .  	Number	0000	
+ADDR_INT_ABORT . . . . . . . . .  	Number	0080	
+ADDR_INT_COMMAND . . . . . . . .  	Number	0084	
+ADDR_INT_CTRL_C  . . . . . . . .  	Number	008C	
+ADDR_INT_DISK_READ . . . . . . .  	Number	0094	
+ADDR_INT_DISK_WRITE  . . . . . .  	Number	0098	
+ADDR_INT_FASTCON . . . . . . . .  	Number	00A4	
+ADDR_INT_FATAL_ABORT . . . . . .  	Number	0090	
+ADDR_INT_KEEP_PROCESS  . . . . .  	Number	009C	
+ADDR_INT_SPOOLER . . . . . . . .  	Number	00A0	
+ADDR_INT_TERMINATE . . . . . . .  	Number	0088	
+ALLOC  . . . . . . . . . . . . .  	Number	0048	
+ALLOCOPER  . . . . . . . . . . .  	Number	0058	
+ALLOC_ARENA_TRASHED  . . . . . .  	Alias	 ERROR_ARENA_TRASHED		
+ALLOC_NOT_ENOUGH_MEMORY  . . . .  	Alias	 ERROR_NOT_ENOUGH_MEMORY		
+ALTVECT  . . . . . . . . . . . .  	Number	0000	
+ARENA_OWNER_SYSTEM . . . . . . .  	Number	0000	
+ARENA_SIGNATURE_END  . . . . . .  	Number	005A	
+ARENA_SIGNATURE_NORMAL . . . . .  	Number	004D	
+ASSIGNOPER . . . . . . . . . . .  	Number	005F	
+ATTRIB . . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+ATTR_ALL . . . . . . . . . . . .  	Number	0016	
+ATTR_ARCHIVE . . . . . . . . . .  	Number	0020	
+ATTR_CHANGEABLE  . . . . . . . .  	Number	0027	
+ATTR_DIRECTORY . . . . . . . . .  	Number	0010	
+ATTR_HIDDEN  . . . . . . . . . .  	Number	0002	
+ATTR_IGNORE  . . . . . . . . . .  	Number	0021	
+ATTR_READ_ONLY . . . . . . . . .  	Number	0001	
+ATTR_SYSTEM  . . . . . . . . . .  	Number	0004	
+ATTR_VOLUME_ID . . . . . . . . .  	Number	0008	
+AUXSTACK . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+
+BUFINSIZ . . . . . . . . . . . .  	Number	0010	
+
+CHAR_OPER  . . . . . . . . . . .  	Number	0037	
+CHDIR  . . . . . . . . . . . . .  	Number	003B	
+CHDIR_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+CHMOD  . . . . . . . . . . . . .  	Number	0043	
+CHMOD_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+CHMOD_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+CHMOD_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+CLOSE  . . . . . . . . . . . . .  	Number	003E	
+CLOSE_BAD_HANDLE . . . . . . . .  	L NEAR	0058	CODE
+CLOSE_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+CLOSE_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+CLOSE_JFN  . . . . . . . . . . .  	L NEAR	005D	CODE
+CLOSE_OK . . . . . . . . . . . .  	L NEAR	0093	CODE
+COUNTRY_NOT_FOUND  . . . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-6
+                                                             
+
+CREAT  . . . . . . . . . . . . .  	Number	003C	
+CREATENEWFILE  . . . . . . . . .  	Number	005B	
+CREATETEMPFILE . . . . . . . . .  	Number	005A	
+CREATE_PROCESS_DATA_BLOCK  . . .  	Number	0026	
+CREATING . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+CREAT_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+CREAT_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+CREAT_TOO_MANY_OPEN_FILES  . . .  	Alias	 ERROR_TOO_MANY_OPEN_FILES		
+CURBUF . . . . . . . . . . . . .  	V DWORD	0000	DATA	External
+CURDIR_INVALID_DRIVE . . . . . .  	Alias	 ERROR_INVALID_DRIVE		
+CURDRV . . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+CURRENTPDB . . . . . . . . . . .  	V WORD 	0000	DATA	External
+CURRENT_DIR  . . . . . . . . . .  	Number	0047	
+C_BS . . . . . . . . . . . . . .  	Number	0008	
+C_CR . . . . . . . . . . . . . .  	Number	000D	
+C_DEL  . . . . . . . . . . . . .  	Number	007F	
+C_ETB  . . . . . . . . . . . . .  	Number	0017	
+C_ETX  . . . . . . . . . . . . .  	Number	0003	
+C_HT . . . . . . . . . . . . . .  	Number	0009	
+C_LF . . . . . . . . . . . . . .  	Number	000A	
+C_NAK  . . . . . . . . . . . . .  	Number	0015	
+
+DBPBHL . . . . . . . . . . . . .  	Number	0016	
+DEALLOC  . . . . . . . . . . . .  	Number	0049	
+DEALLOC_ARENA_TRASHED  . . . . .  	Alias	 ERROR_ARENA_TRASHED		
+DEALLOC_INVALID_BLOCK  . . . . .  	Alias	 ERROR_INVALID_BLOCK		
+DEVBPB . . . . . . . . . . . . .  	Number	0002	
+DEVID_BLOCK_DEV  . . . . . . . .  	Number	001F	
+DEVID_DEVICE . . . . . . . . . .  	Number	0080	
+DEVID_DEVICE_CLOCK . . . . . . .  	Number	0008	
+DEVID_DEVICE_CON_IN  . . . . . .  	Number	0001	
+DEVID_DEVICE_CON_OUT . . . . . .  	Number	0002	
+DEVID_DEVICE_EOF . . . . . . . .  	Number	0040	
+DEVID_DEVICE_NULL  . . . . . . .  	Number	0004	
+DEVID_DEVICE_RAW . . . . . . . .  	Number	0020	
+DEVID_DEVICE_SPECIAL . . . . . .  	Number	0010	
+DEVID_EOF  . . . . . . . . . . .  	Number	0040	
+DEVID_FILE_CLEAN . . . . . . . .  	Number	0040	
+DEVID_FILE_MASK_DRIVE  . . . . .  	Number	003F	
+DEVID_ISCIN  . . . . . . . . . .  	Number	0001	
+DEVID_ISCLK  . . . . . . . . . .  	Number	0008	
+DEVID_ISCOT  . . . . . . . . . .  	Number	0002	
+DEVID_ISDEV  . . . . . . . . . .  	Number	0080	
+DEVID_ISNUL  . . . . . . . . . .  	Number	0004	
+DEVID_RAW  . . . . . . . . . . .  	Number	0020	
+DEVID_SPECIAL  . . . . . . . . .  	Number	0010	
+DEVIFL . . . . . . . . . . . . .  	Number	0007	
+DEVINIT  . . . . . . . . . . . .  	Number	0000	
+DEVIOCTL . . . . . . . . . . . .  	Number	4000	
+DEVIST . . . . . . . . . . . . .  	Number	0006	
+DEVMDCH  . . . . . . . . . . . .  	Number	0001	
+DEVOFL . . . . . . . . . . . . .  	Number	000B	
+DEVOST . . . . . . . . . . . . .  	Number	000A	
+DEVRD  . . . . . . . . . . . . .  	Number	0004	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-7
+                                                             
+
+DEVRDIOCTL . . . . . . . . . . .  	Number	0003	
+DEVRDND  . . . . . . . . . . . .  	Number	0005	
+DEVTYP . . . . . . . . . . . . .  	Number	8000	
+DEVWRIOCTL . . . . . . . . . . .  	Number	000C	
+DEVWRT . . . . . . . . . . . . .  	Number	0008	
+DEVWRTV  . . . . . . . . . . . .  	Number	0009	
+DFLSHL . . . . . . . . . . . . .  	Number	000F	
+DINITHL  . . . . . . . . . . . .  	Number	001A	
+DIRPRI . . . . . . . . . . . . .  	Number	000F	
+DIRSTART . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+DIRSTRLEN  . . . . . . . . . . .  	Number	0040	
+DIR_SEARCH_FIRST . . . . . . . .  	Number	0011	
+DIR_SEARCH_NEXT  . . . . . . . .  	Number	0012	
+DISK_RESET . . . . . . . . . . .  	Number	000D	
+DMAADD . . . . . . . . . . . . .  	V DWORD	0000	DATA	External
+DMEDHL . . . . . . . . . . . . .  	Number	000F	
+DOS_MAJOR_VERSION  . . . . . . .  	Number	0002	
+DOS_MINOR_VERSION  . . . . . . .  	Number	000B	
+DPBSIZ . . . . . . . . . . . . .  	Number	005E	
+DRDNDHL  . . . . . . . . . . . .  	Number	000E	
+DRDWRHL  . . . . . . . . . . . .  	Number	0016	
+DSKSIZ . . . . . . . . . . . . .  	Number	000D	
+DSTATHL  . . . . . . . . . . . .  	Number	000D	
+DUP2_INVALID_HANDLE  . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+DUP_INVALID_HANDLE . . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+DUP_PDB  . . . . . . . . . . . .  	Number	0055	
+DUP_TOO_MANY_OPEN_FILES  . . . .  	Alias	 ERROR_TOO_MANY_OPEN_FILES		
+
+ENTLAST  . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+ENTRYPOINT . . . . . . . . . . .  	Number	00C0	
+ERROR_ACCESS_DENIED  . . . . . .  	Number	0005	
+ERROR_ARENA_TRASHED  . . . . . .  	Number	0007	
+ERROR_BAD_ENVIRONMENT  . . . . .  	Number	000A	
+ERROR_BAD_FORMAT . . . . . . . .  	Number	000B	
+ERROR_CURRENT_DIRECTORY  . . . .  	Number	0010	
+ERROR_FILE_NOT_FOUND . . . . . .  	Number	0002	
+ERROR_INVALID_ACCESS . . . . . .  	Number	000C	
+ERROR_INVALID_BLOCK  . . . . . .  	Number	0009	
+ERROR_INVALID_DATA . . . . . . .  	Number	000D	
+ERROR_INVALID_DRIVE  . . . . . .  	Number	000F	
+ERROR_INVALID_FUNCTION . . . . .  	Number	0001	
+ERROR_INVALID_HANDLE . . . . . .  	Number	0006	
+ERROR_NOT_ENOUGH_MEMORY  . . . .  	Number	0008	
+ERROR_NOT_SAME_DEVICE  . . . . .  	Number	0011	
+ERROR_NO_MORE_FILES  . . . . . .  	Number	0012	
+ERROR_PATH_NOT_FOUND . . . . . .  	Number	0003	
+ERROR_TOO_MANY_OPEN_FILES  . . .  	Number	0004	
+EXEC . . . . . . . . . . . . . .  	Number	004B	
+EXEC_BAD_ENVIRONMENT . . . . . .  	Alias	 ERROR_BAD_ENVIRONMENT		
+EXEC_BAD_FORMAT  . . . . . . . .  	Alias	 ERROR_BAD_FORMAT		
+EXEC_FILE_NOT_FOUND  . . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+EXEC_FUNC_NO_EXECUTE . . . . . .  	Number	0001	
+EXEC_FUNC_OVERLAY  . . . . . . .  	Number	0002	
+EXEC_INVALID_FUNCTION  . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-8
+                                                             
+
+EXEC_NOT_ENOUGH_MEMORY . . . . .  	Alias	 ERROR_NOT_ENOUGH_MEMORY		
+EXE_VALID_OLD_SIGNATURE  . . . .  	Number	4D5A	
+EXE_VALID_SIGNATURE  . . . . . .  	Number	5A4D	
+EXIT . . . . . . . . . . . . . .  	Number	004C	
+EXIT_ABORT . . . . . . . . . . .  	Number	0000	
+EXIT_CTRL_C  . . . . . . . . . .  	Number	0001	
+EXIT_HARD_ERROR  . . . . . . . .  	Number	0002	
+EXIT_KEEP_PROCESS  . . . . . . .  	Number	0003	
+EXIT_TERMINATE . . . . . . . . .  	Number	0000	
+
+FATPRI . . . . . . . . . . . . .  	Number	001E	
+FCB_CLOSE  . . . . . . . . . . .  	Number	0010	
+FCB_CREATE . . . . . . . . . . .  	Number	0016	
+FCB_DELETE . . . . . . . . . . .  	Number	0013	
+FCB_OPEN . . . . . . . . . . . .  	Number	000F	
+FCB_RANDOM_READ  . . . . . . . .  	Number	0021	
+FCB_RANDOM_READ_BLOCK  . . . . .  	Number	0027	
+FCB_RANDOM_WRITE . . . . . . . .  	Number	0022	
+FCB_RANDOM_WRITE_BLOCK . . . . .  	Number	0028	
+FCB_RENAME . . . . . . . . . . .  	Number	0017	
+FCB_SEQ_READ . . . . . . . . . .  	Number	0014	
+FCB_SEQ_WRITE  . . . . . . . . .  	Number	0015	
+FILDIRENT  . . . . . . . . . . .  	Number	0010	
+FILETIMES_DISP . . . . . . . . .  	L NEAR	0298	CODE
+FILETIMES_INVALID_FUNCTION . . .  	Alias	 ERROR_INVALID_FUNCTION		
+FILETIMES_INVALID_HANDLE . . . .  	Alias	 ERROR_INVALID_HANDLE		
+FILETIMES_OK . . . . . . . . . .  	L NEAR	028D	CODE
+FILETIMES_SET  . . . . . . . . .  	L NEAR	02AF	CODE
+FILE_TIMES . . . . . . . . . . .  	Number	0057	
+FILPERPROC . . . . . . . . . . .  	Number	0014	
+FINDFIRST_FILE_NOT_FOUND . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+FINDFIRST_NO_MORE_FILES  . . . .  	Alias	 ERROR_NO_MORE_FILES		
+FINDNEXT_NO_MORE_FILES . . . . .  	Alias	 ERROR_NO_MORE_FILES		
+FIND_FIRST . . . . . . . . . . .  	Number	004E	
+FIND_NEXT  . . . . . . . . . . .  	Number	004F	
+FREEPRI  . . . . . . . . . . . .  	Number	0000	
+
+GETEXTENDEDERROR . . . . . . . .  	Number	0059	
+GET_CURRENT_PDB  . . . . . . . .  	Number	0051	
+GET_DATE . . . . . . . . . . . .  	Number	002A	
+GET_DEFAULT_DPB  . . . . . . . .  	Number	001F	
+GET_DEFAULT_DRIVE  . . . . . . .  	Number	0019	
+GET_DMA  . . . . . . . . . . . .  	Number	002F	
+GET_DPB  . . . . . . . . . . . .  	Number	0032	
+GET_DRIVE_FREESPACE  . . . . . .  	Number	0036	
+GET_FCB_FILE_LENGTH  . . . . . .  	Number	0023	
+GET_FCB_POSITION . . . . . . . .  	Number	0024	
+GET_INDOS_FLAG . . . . . . . . .  	Number	0034	
+GET_INTERRUPT_VECTOR . . . . . .  	Number	0035	
+GET_IN_VARS  . . . . . . . . . .  	Number	0052	
+GET_JFN_BAD  . . . . . . . . . .  	L NEAR	004F	CODE
+GET_JFN_POINTER  . . . . . . . .  	N PROC	003F	CODE	Global	Length = 0012
+GET_SFN_LOOP . . . . . . . . . .  	L NEAR	0005	CODE
+GET_SF_FROM_JFN  . . . . . . . .  	N PROC	002B	CODE	Global	Length = 0014
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-9
+                                                             
+
+GET_SF_FROM_SFN  . . . . . . . .  	N PROC	0000	CODE	Global	Length = 002B
+GET_SF_GOTTEN  . . . . . . . . .  	L NEAR	0015	CODE
+GET_SF_INVALID . . . . . . . . .  	L NEAR	0028	CODE
+GET_SF_JFN_INVALID . . . . . . .  	L NEAR	0028	CODE
+GET_SF_JFN_RET . . . . . . . . .  	L NEAR	0029	CODE
+GET_SF_RET . . . . . . . . . . .  	L NEAR	0029	CODE
+GET_TIME . . . . . . . . . . . .  	Number	002C	
+GET_VERIFY_ON_WRITE  . . . . . .  	Number	0054	
+GET_VERSION  . . . . . . . . . .  	Number	0030	
+
+INTBASE  . . . . . . . . . . . .  	Number	0080	
+INTERNATIONAL  . . . . . . . . .  	Number	0038	
+INTERNATIONAL_INVALID_FUNCTION .  	Alias	 ERROR_INVALID_FUNCTION		
+INTERNAT_BLOCK_MAX . . . . . . .  	Number	0020	
+INTTAB . . . . . . . . . . . . .  	Number	0020	
+INT_ABORT  . . . . . . . . . . .  	Alias	 INTTAB		
+INT_COMMAND  . . . . . . . . . .  	Number	0021	
+INT_CTRL_C . . . . . . . . . . .  	Number	0023	
+INT_DISK_READ  . . . . . . . . .  	Number	0025	
+INT_DISK_WRITE . . . . . . . . .  	Number	0026	
+INT_FASTCON  . . . . . . . . . .  	Number	0029	
+INT_FATAL_ABORT  . . . . . . . .  	Number	0024	
+INT_KEEP_PROCESS . . . . . . . .  	Number	0027	
+INT_SPOOLER  . . . . . . . . . .  	Number	0028	
+INT_TERMINATE  . . . . . . . . .  	Number	0022	
+IOCALL . . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+IOCTL  . . . . . . . . . . . . .  	Number	0044	
+IOCTL_ACC_ERR  . . . . . . . . .  	L NEAR	021D	CODE
+IOCTL_BAD_DRV  . . . . . . . . .  	L NEAR	0238	CODE
+IOCTL_BAD_FUN  . . . . . . . . .  	L NEAR	0219	CODE
+IOCTL_CHECK_BLOCK  . . . . . . .  	L NEAR	01F1	CODE
+IOCTL_CHECK_DEVICE . . . . . . .  	L NEAR	01C0	CODE
+IOCTL_CHECK_PERMISSIONS  . . . .  	L NEAR	01AC	CODE
+IOCTL_CONTROL_CALL . . . . . . .  	L NEAR	0258	CODE
+IOCTL_CONTROL_READ . . . . . . .  	L NEAR	0253	CODE
+IOCTL_CONTROL_STRING . . . . . .  	L NEAR	01E2	CODE
+IOCTL_DO_STRING  . . . . . . . .  	L NEAR	023E	CODE
+IOCTL_GET_DEV  . . . . . . . . .  	L NEAR	0221	CODE
+IOCTL_GET_STATUS . . . . . . . .  	L NEAR	0205	CODE
+IOCTL_INVALID_DATA . . . . . . .  	Alias	 ERROR_INVALID_DATA		
+IOCTL_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+IOCTL_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+IOCTL_NO_HIGH  . . . . . . . . .  	L NEAR	01D8	CODE
+IOCTL_READ . . . . . . . . . . .  	L NEAR	01CA	CODE
+IOCTL_STATUS_RET . . . . . . . .  	L NEAR	0217	CODE
+IOMED  . . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+IOSCNT . . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+IOXAD  . . . . . . . . . . . . .  	V DWORD	0000	DATA	External
+IO_BAD_MODE  . . . . . . . . . .  	L NEAR	0100	CODE
+IO_DONE  . . . . . . . . . . . .  	L NEAR	010A	CODE
+IO_ERR . . . . . . . . . . . . .  	L NEAR	0102	CODE
+IO_SETUP . . . . . . . . . . . .  	L NEAR	0132	CODE
+ISCIN  . . . . . . . . . . . . .  	Number	0001	
+ISCLOCK  . . . . . . . . . . . .  	Number	0008	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-10
+                                                             
+
+ISCOUT . . . . . . . . . . . . .  	Number	0002	
+ISFATBYDEV . . . . . . . . . . .  	Number	2000	
+ISIBM  . . . . . . . . . . . . .  	Number	0010	
+ISNULL . . . . . . . . . . . . .  	Number	0004	
+
+KANJI  . . . . . . . . . . . . .  	Number	0000	
+KEEP_PROCESS . . . . . . . . . .  	Number	0031	
+
+LASTENT  . . . . . . . . . . . .  	V WORD 	0000	DATA	External
+LBRPRI . . . . . . . . . . . . .  	Number	0002	
+LBWPRI . . . . . . . . . . . . .  	Number	0004	
+LOCKOPER . . . . . . . . . . . .  	Number	005C	
+LSEEK  . . . . . . . . . . . . .  	Number	0042	
+LSEEK_BAD  . . . . . . . . . . .  	L NEAR	0195	CODE
+LSEEK_BEGINNING  . . . . . . . .  	L NEAR	0177	CODE
+LSEEK_CURRENT  . . . . . . . . .  	L NEAR	018A	CODE
+LSEEK_DISPATCH . . . . . . . . .  	L NEAR	0164	CODE
+LSEEK_GET_SF . . . . . . . . . .  	L NEAR	014F	CODE
+LSEEK_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+LSEEK_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+LSEEK_RET  . . . . . . . . . . .  	L NEAR	017A	CODE
+
+MI_INT . . . . . . . . . . . . .  	Number	00CD	
+MI_LONG_CALL . . . . . . . . . .  	Number	009A	
+MI_LONG_JMP  . . . . . . . . . .  	Number	00EA	
+MI_LONG_RET  . . . . . . . . . .  	Number	00CB	
+MKDIR  . . . . . . . . . . . . .  	Number	0039	
+MKDIR_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+MKDIR_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+
+NAME1  . . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+NOSETDIR . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+NO_ERROR_OCCURRED  . . . . . . .  	Text  0                                                              ?		
+
+OEM_C1 . . . . . . . . . . . . .  	Number	00F9	
+OEM_C2 . . . . . . . . . . . . .  	Number	00FA	
+OEM_C3 . . . . . . . . . . . . .  	Number	00FB	
+OEM_C4 . . . . . . . . . . . . .  	Number	00FC	
+OEM_C5 . . . . . . . . . . . . .  	Number	00FD	
+OEM_C6 . . . . . . . . . . . . .  	Number	00FE	
+OEM_C7 . . . . . . . . . . . . .  	Number	00FF	
+OPEN . . . . . . . . . . . . . .  	Number	003D	
+OPEN_ACCESS_DENIED . . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+OPEN_FILE_NOT_FOUND  . . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+OPEN_FOR_BOTH  . . . . . . . . .  	Number	0002	
+OPEN_FOR_READ  . . . . . . . . .  	Number	0000	
+OPEN_FOR_WRITE . . . . . . . . .  	Number	0001	
+OPEN_INVALID_ACCESS  . . . . . .  	Alias	 ERROR_INVALID_ACCESS		
+OPEN_TOO_MANY_OPEN_FILES . . . .  	Alias	 ERROR_TOO_MANY_OPEN_FILES		
+
+PARSE_FILE_DESCRIPTOR  . . . . .  	Number	0029	
+POPDMA . . . . . . . . . . . . .  	N PROC	00C9	CODE	Global	Length = 0015
+PTR_NORMALIZE  . . . . . . . . .  	N PROC	00DE	CODE	Global	Length = 0013
+PUSHBX . . . . . . . . . . . . .  	L WORD 	0004	DATA
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-11
+                                                             
+
+PUSHDMA  . . . . . . . . . . . .  	N PROC	0096	CODE	Global	Length = 0033
+PUSHES . . . . . . . . . . . . .  	L WORD 	0002	DATA
+PUSHSAVE . . . . . . . . . . . .  	L WORD 	0000	DATA
+
+RAW_CON_INPUT  . . . . . . . . .  	Number	0007	
+RAW_CON_IO . . . . . . . . . . .  	Number	0006	
+READ . . . . . . . . . . . . . .  	Number	003F	
+READ_ACCESS_DENIED . . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+READ_INVALID_HANDLE  . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+READ_SETUP . . . . . . . . . . .  	L NEAR	0107	CODE
+RENAME . . . . . . . . . . . . .  	Number	0056	
+RENAME_ACCESS_DENIED . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+RENAME_FILE_NOT_FOUND  . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+RENAME_NOT_SAME_DEVICE . . . . .  	Alias	 ERROR_NOT_SAME_DEVICE		
+RMDIR  . . . . . . . . . . . . .  	Number	003A	
+RMDIR_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+RMDIR_CURRENT_DIRECTORY  . . . .  	Alias	 ERROR_CURRENT_DIRECTORY		
+RMDIR_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+RPRI . . . . . . . . . . . . . .  	Number	0006	
+
+SERVERCALL . . . . . . . . . . .  	Number	005D	
+SETBLOCK . . . . . . . . . . . .  	Number	004A	
+SETBLOCK_ARENA_TRASHED . . . . .  	Alias	 ERROR_ARENA_TRASHED		
+SETBLOCK_INVALID_BLOCK . . . . .  	Alias	 ERROR_INVALID_BLOCK		
+SETBLOCK_INVALID_FUNCTION  . . .  	Alias	 ERROR_INVALID_FUNCTION		
+SETBLOCK_NOT_ENOUGH_MEMORY . . .  	Alias	 ERROR_NOT_ENOUGH_MEMORY		
+SETDPB . . . . . . . . . . . . .  	Number	0053	
+SET_CTRL_C_TRAPPING  . . . . . .  	Number	0033	
+SET_CURRENT_PDB  . . . . . . . .  	Number	0050	
+SET_DATE . . . . . . . . . . . .  	Number	002B	
+SET_DEFAULT_DRIVE  . . . . . . .  	Number	000E	
+SET_DMA  . . . . . . . . . . . .  	Number	001A	
+SET_INTERRUPT_VECTOR . . . . . .  	Number	0025	
+SET_OEM_HANDLER  . . . . . . . .  	Number	00F8	
+SET_TIME . . . . . . . . . . . .  	Number	002D	
+SET_VERIFY_ON_WRITE  . . . . . .  	Number	002E	
+SFT_ADDR . . . . . . . . . . . .  	V DWORD	0000	DATA	External
+SF_DEFAULT_NUMBER  . . . . . . .  	Number	0005	
+STBUI  . . . . . . . . . . . . .  	Number	0200	
+STDAUX . . . . . . . . . . . . .  	Number	0003	
+STDERR . . . . . . . . . . . . .  	Number	0002	
+STDIN  . . . . . . . . . . . . .  	Number	0000	
+STDON  . . . . . . . . . . . . .  	Number	0100	
+STDOUT . . . . . . . . . . . . .  	Number	0001	
+STDPRN . . . . . . . . . . . . .  	Number	0004	
+STD_AUX_INPUT  . . . . . . . . .  	Number	0003	
+STD_AUX_OUTPUT . . . . . . . . .  	Number	0004	
+STD_CON_INPUT  . . . . . . . . .  	Number	0001	
+STD_CON_INPUT_FLUSH  . . . . . .  	Number	000C	
+STD_CON_INPUT_NO_ECHO  . . . . .  	Number	0008	
+STD_CON_INPUT_STATUS . . . . . .  	Number	000B	
+STD_CON_OUTPUT . . . . . . . . .  	Number	0002	
+STD_CON_STRING_INPUT . . . . . .  	Number	000A	
+STD_CON_STRING_OUTPUT  . . . . .  	Number	0009	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 09:23:52
+
+XENIX - IO system to mimic UNIX                             Symbols-12
+                                                             
+
+STD_PRINTER_OUTPUT . . . . . . .  	Number	0005	
+STECODE  . . . . . . . . . . . .  	Number	00FF	
+STERR  . . . . . . . . . . . . .  	Number	8000	
+SYS_RET_ERR_J  . . . . . . . . .  	NEAR 	0296	CODE
+SYS_RET_OK_J . . . . . . . . . .  	NEAR 	02BC	CODE
+
+THISDPB  . . . . . . . . . . . .  	V DWORD	0000	DATA	External
+THISDRV  . . . . . . . . . . . .  	V BYTE 	0000	DATA	External
+THISFCB  . . . . . . . . . . . .  	V DWORD	0000	DATA	External
+
+UNLINK . . . . . . . . . . . . .  	Number	0041	
+UNLINK_ACCESS_DENIED . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+UNLINK_FILE_NOT_FOUND  . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+USERIDOPER . . . . . . . . . . .  	Number	005E	
+
+WAIT . . . . . . . . . . . . . .  	Number	004D	
+WPRI . . . . . . . . . . . . . .  	Number	0008	
+WRECODE  . . . . . . . . . . . .  	Number	0000	
+WRITE  . . . . . . . . . . . . .  	Number	0040	
+WRITE_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+WRITE_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+
+XDUP . . . . . . . . . . . . . .  	Number	0045	
+XDUP2  . . . . . . . . . . . . .  	Number	0046	
+XENIX_COUNT  . . . . . . . . . .  	L WORD 	0006	DATA
+
+$CLOSE . . . . . . . . . . . . .  	N PROC	0051	CODE	Global	Length = 0045
+$FILE_TIMES  . . . . . . . . . .  	N PROC	0285	CODE	Global	Length = 0039
+$IOCTL . . . . . . . . . . . . .  	N PROC	0199	CODE	Global	Length = 00EC
+$LSEEK . . . . . . . . . . . . .  	N PROC	0147	CODE	Global	Length = 0052
+$READ  . . . . . . . . . . . . .  	N PROC	00F1	CODE	Global	Length = 002D
+$WRITE . . . . . . . . . . . . .  	N PROC	011E	CODE	Global	Length = 0014
+??0001 . . . . . . . . . . . . .  	L NEAR	005A	CODE
+??0003 . . . . . . . . . . . . .  	L NEAR	0091	CODE
+??0004 . . . . . . . . . . . . .  	L NEAR	0093	CODE
+??0005 . . . . . . . . . . . . .  	L NEAR	0105	CODE
+??0006 . . . . . . . . . . . . .  	L NEAR	011B	CODE
+??0008 . . . . . . . . . . . . .  	L NEAR	014D	CODE
+??0009 . . . . . . . . . . . . .  	L NEAR	0188	CODE
+??000B . . . . . . . . . . . . .  	L NEAR	0197	CODE
+??000D . . . . . . . . . . . . .  	L NEAR	01AA	CODE
+??000F . . . . . . . . . . . . .  	L NEAR	01BE	CODE
+??0010 . . . . . . . . . . . . .  	L NEAR	01C8	CODE
+??0011 . . . . . . . . . . . . .  	L NEAR	01E0	CODE
+??0012 . . . . . . . . . . . . .  	L NEAR	0217	CODE
+??0014 . . . . . . . . . . . . .  	L NEAR	021B	CODE
+??0016 . . . . . . . . . . . . .  	L NEAR	021F	CODE
+??0017 . . . . . . . . . . . . .  	L NEAR	0283	CODE
+??0019 . . . . . . . . . . . . .  	L NEAR	028B	CODE
+??001B . . . . . . . . . . . . .  	L NEAR	0296	CODE
+??001C . . . . . . . . . . . . .  	L NEAR	02AD	CODE
+??001D . . . . . . . . . . . . .  	L NEAR	02BC	CODE
+
+
+   1937 Source  Lines
+   3019 Total   Lines
+    640 Symbols
+
+  17560 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

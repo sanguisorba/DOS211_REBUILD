@@ -1,0 +1,117 @@
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 16:19:09
+
+LOCATE (EXE2BIN) Messages                                   Page     1-1
+                                                            
+
+       1                                        title   LOCATE (EXE2BIN) Messag
+					es 
+       2                                 
+       3 = 0000                         FALSE   EQU     0 
+       4 = FFFF                         TRUE    EQU     NOT FALSE 
+       5                                 
+       6 0000                           DATA    SEGMENT PUBLIC BYTE 
+       7                                 
+       8                                        PUBLIC  bad_vers_err,NOTFND,NOR
+					OOM,DIRFULL,FULL,PROMPT,CRLF 
+       9                                        PUBLIC  CANTFIX,RDBAD 
+      10                                 
+      11 0000  49 6E 63 6F 72 72 65     bad_vers_err db "Incorrect DOS version$
+					" 
+      12       63 74 20 44 4F 53 20     
+      13       76 65 72 73 69 6F 6E     
+      14       24                       
+      15 0016  46 69 6C 65 20 6E 6F     NOTFND  DB      "File not found$" 
+      16       74 20 66 6F 75 6E 64     
+      17       24                       
+      18 0025  49 6E 73 75 66 66 69     NOROOM  DB      "Insufficient memory$" 
+      19       63 69 65 6E 74 20 6D     
+      20       65 6D 6F 72 79 24        
+      21 0039  46 69 6C 65 20 63 72     DIRFULL DB      "File creation error$" 
+      22       65 61 74 69 6F 6E 20     
+      23       65 72 72 6F 72 24        
+      24 004D  49 6E 73 75 66 66 69     FULL    DB      "Insufficient disk spac
+					e$" 
+      25       63 69 65 6E 74 20 64     
+      26       69 73 6B 20 73 70 61     
+      27       63 65 24                 
+      28 0065  46 69 78 2D 75 70 73     PROMPT  DB      "Fix-ups needed - base 
+					segment (hex): $" 
+      29       20 6E 65 65 64 65 64     
+      30       20 2D 20 62 61 73 65     
+      31       20 73 65 67 6D 65 6E     
+      32       74 20 28 68 65 78 29     
+      33       3A 20 24                 
+      34 008B  0D 0A 24                 CRLF    DB      13,10,"$" 
+      35 008E  46 69 6C 65 20 63 61     CANTFIX DB      "File cannot be convert
+					ed$" 
+      36       6E 6E 6F 74 20 62 65     
+      37       20 63 6F 6E 76 65 72     
+      38       74 65 64 24              
+      39 00A7  57 41 52 4E 49 4E 47     RDBAD   DB      "WARNING - Read error o
+					n EXE file." 
+      40       20 2D 20 52 65 61 64     
+      41       20 65 72 72 6F 72 20     
+      42       6F 6E 20 45 58 45 20     
+      43       66 69 6C 65 2E           
+      44 00C8  0D 0A 20 20 20 20 20             DB      13,10,"          Amount
+					 read less than size in header.",13,10,
+					"$" 
+      45       20 20 20 20 20 41 6D     
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 16:19:09
+
+LOCATE (EXE2BIN) Messages                                   Page     1-2
+                                                            
+
+      46       6F 75 6E 74 20 72 65     
+      47       61 64 20 6C 65 73 73     
+      48       20 74 68 61 6E 20 73     
+      49       69 7A 65 20 69 6E 20     
+      50       68 65 61 64 65 72 2E     
+      51       0D 0A 24                 
+      52                                 
+      53                                 
+      54 00FC                           DATA    ENDS 
+      55                                        END 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 16:19:09
+
+LOCATE (EXE2BIN) Messages                                   Symbols-1
+                                                             
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+DATA . . . . . . . . . . . . . .  	00FC	BYTE	PUBLIC	
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+BAD_VERS_ERR . . . . . . . . . .  	L BYTE 	0000	DATA	Global
+
+CANTFIX  . . . . . . . . . . . .  	L BYTE 	008E	DATA	Global
+CRLF . . . . . . . . . . . . . .  	L BYTE 	008B	DATA	Global
+
+DIRFULL  . . . . . . . . . . . .  	L BYTE 	0039	DATA	Global
+
+FALSE  . . . . . . . . . . . . .  	Number	0000	
+FULL . . . . . . . . . . . . . .  	L BYTE 	004D	DATA	Global
+
+NOROOM . . . . . . . . . . . . .  	L BYTE 	0025	DATA	Global
+NOTFND . . . . . . . . . . . . .  	L BYTE 	0016	DATA	Global
+
+PROMPT . . . . . . . . . . . . .  	L BYTE 	0065	DATA	Global
+
+RDBAD  . . . . . . . . . . . . .  	L BYTE 	00A7	DATA	Global
+
+TRUE . . . . . . . . . . . . . .  	Number	FFFF	
+
+
+     24 Source  Lines
+     24 Total   Lines
+     33 Symbols
+
+  48968 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

@@ -1,0 +1,2954 @@
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-1
+                                                            
+
+       1                                        TITLE   MORE MS-DOS Paginate Fi
+					lter 
+       2 = 0000                         FALSE   EQU     0 
+       3 = FFFF                         TRUE    EQU     NOT FALSE 
+       4                                 
+       5 =                              IBMVER  EQU     TRUE 
+       6 =                              KANJI   EQU	FALSE 
+       7 =                              MSVER   EQU     FALSE 
+       8                                 
+       9                             C          INCLUDE DOSSYM.ASM 
+      10                             C  include DOSMAC.ASM 
+      11                             C  ; 
+      12                             C  ; Macro file for MSDOS. 
+      13                             C  ; 
+      14                             C   
+      15                             C  SUBTTL BREAK a listing into pages and g
+					ive new subtitles 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-2
+BREAK a listing into pages and give new subtitles           
+
+      16                             C  PAGE 
+      17                             C  BREAK MACRO subtitle 
+      18                             C   SUBTTL subtitle 
+      19                             C   PAGE 
+      20                             C  ENDM 
+      21                             C   
+      22                             C  BREAK <I_NEED: declare a variable exter
+					nal, if necessary, and allocate a size>
+					 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-3
+I_NEED: declare a variable external, if necessary, and alloc
+
+      23                             C   
+      24                             C  ; 
+      25                             C  ; declare a variable external and alloc
+					ate a size 
+      26                             C  ; 
+      27                             C  I_NEED MACRO sym,len 
+      28                             C   DATA SEGMENT BYTE PUBLIC 'DATA' 
+      29                             C   IFIDN <len>,<WORD> 
+      30                             C   EXTRN &sym:WORD 
+      31                             C   ELSE 
+      32                             C   IFIDN <len>,<DWORD> 
+      33                             C   EXTRN &sym:DWORD 
+      34                             C   ELSE 
+      35                             C   EXTRN &sym:BYTE 
+      36                             C   ENDIF 
+      37                             C   ENDIF 
+      38                             C   DATA ENDS 
+      39                             C  ENDM 
+      40                             C   
+      41                             C  ; 
+      42                             C  ; call a procedure that may be external
+					. The call will be short. 
+      43                             C  ; 
+      44                             C  invoke MACRO name 
+      45                             C  .xcref 
+      46                             C   IF2 
+      47                             C   IFNDEF name 
+      48                             C   EXTRN name:NEAR 
+      49                             C   ENDIF 
+      50                             C   ENDIF 
+      51                             C  .cref 
+      52                             C   CALL name 
+      53                             C  ENDM 
+      54                             C   
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-4
+I_NEED: declare a variable external, if necessary, and alloc
+
+      55                             C  PAGE 
+      56                             C  ; 
+      57                             C  ; jump to a label that may be external.
+					 The jump will be near. 
+      58                             C  ; 
+      59                             C  transfer MACRO name 
+      60                             C  .xcref 
+      61                             C   IF2 
+      62                             C   IFNDEF name 
+      63                             C   EXTRN name:NEAR 
+      64                             C   ENDIF 
+      65                             C   ENDIF 
+      66                             C  .cref 
+      67                             C   JUMP name 
+      68                             C  ENDM 
+      69                             C   
+      70                             C  ; 
+      71                             C  ; get a short address in a word 
+      72                             C  ; 
+      73                             C  short_addr MACRO name 
+      74                             C   IFDIF <name>,<?> 
+      75                             C  .xcref 
+      76                             C   IF2 
+      77                             C   IFNDEF name 
+      78                             C   EXTRN name:NEAR 
+      79                             C   ENDIF 
+      80                             C   ENDIF 
+      81                             C  .cref 
+      82                             C   DW OFFSET DOSGROUP:name 
+      83                             C   ELSE 
+      84                             C   DW ? 
+      85                             C   ENDIF 
+      86                             C  ENDM 
+      87                             C   
+      88                             C  ; 
+      89                             C  ; get a long address in a dword 
+      90                             C  ; 
+      91                             C  long_addr MACRO name 
+      92                             C  .xcref 
+      93                             C   IF2 
+      94                             C   IFNDEF name 
+      95                             C   EXTRN name:NEAR 
+      96                             C   ENDIF 
+      97                             C  .cref 
+      98                             C   DD name 
+      99                             C  ENDM 
+     100                             C   
+     101                             C  ; 
+     102                             C  ; declare a PROC near or far but PUBLIC
+					 nonetheless 
+     103                             C  ; 
+     104                             C  procedure MACRO name,distance 
+     105                             C   PUBLIC name 
+     106                             C  name PROC distance 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-5
+I_NEED: declare a variable external, if necessary, and alloc
+
+     107                             C  ENDM 
+     108                             C   
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-6
+I_NEED: declare a variable external, if necessary, and alloc
+
+     109                             C  PAGE 
+     110                             C  ; 
+     111                             C  ; define a data item to be public and o
+					f an appropriate size/type 
+     112                             C  ; 
+     113                             C  I_AM MACRO name,size 
+     114                             C   PUBLIC name 
+     115                             C   
+     116                             C   IFIDN <size>,<WORD> 
+     117                             C  name DW ? 
+     118                             C   ELSE 
+     119                             C   IFIDN <size>,<DWORD> 
+     120                             C  name DD ? 
+     121                             C   ELSE 
+     122                             C   IFIDN <size>,<BYTE> 
+     123                             C  name DB ? 
+     124                             C   ELSE 
+     125                             C  name DB size DUP (?) 
+     126                             C   ENDIF 
+     127                             C   ENDIF 
+     128                             C   ENDIF 
+     129                             C  ENDM 
+     130                             C   
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-7
+I_NEED: declare a variable external, if necessary, and alloc
+
+     131                             C  PAGE 
+     132                             C  ; 
+     133                             C  ; call the macro chain 
+     134                             C  ; 
+     135                             C  do_ext macro 
+     136                             C  endm 
+     137                             C   
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-8
+I_NEED: declare a variable external, if necessary, and alloc
+
+     138                             C  PAGE 
+     139                             C   
+     140                             C  ; 
+     141                             C  ; define an entry in a procedure 
+     142                             C  ; 
+     143                             C  entry macro name 
+     144                             C   PUBLIC name 
+     145                             C  name: 
+     146                             C  endm 
+     147                             C   
+     148                             C  BREAK <ERROR - print a message and then
+					 jump to a label> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-9
+ERROR - print a message and then jump to a label            
+
+     149                             C   
+     150                             C  error macro code 
+     151                             C   local a 
+     152                             C  .xcref 
+     153                             C   MOV AL,code 
+     154                             C   transfer SYS_RET_ERR 
+     155                             C  .cref 
+     156                             C  ENDM 
+     157                             C   
+     158                             C  BREAK <JUMP - real jump that links up s
+					hortwise> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-10
+JUMP - real jump that links up shortwise                    
+
+     159                             C  ; 
+     160                             C  ; given a label <lbl> either 2 byte jum
+					p to another label <lbl>_J 
+     161                             C  ; if it is near enough or 3 byte jump t
+					o <lbl> 
+     162                             C  ; 
+     163                             C   
+     164                             C  jump macro lbl 
+     165                             C   local a 
+     166                             C  .xcref 
+     167                             C   a: 
+     168                             C   ifndef lbl&_J ;; is this the first inv
+					ocation 
+     169                             C   JMP lbl 
+     170                             C   ELSE 
+     171                             C   IF lbl&_J GE $ 
+     172                             C   JMP lbl 
+     173                             C   ELSE 
+     174                             C   IF ($-lbl&_J) GT 126 ;; is the jump to
+					o far away? 
+     175                             C   JMP lbl 
+     176                             C   ELSE ;; do the short one... 
+     177                             C   JMP lbl&_J 
+     178                             C   ENDIF 
+     179                             C   ENDIF 
+     180                             C   ENDIF 
+     181                             C   lbl&_j = a 
+     182                             C  .cref 
+     183                             C  endm 
+     184                             C   
+     185                             C  BREAK <RETURN - return from a function>
+					 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-11
+RETURN - return from a function                             
+
+     186                             C   
+     187                             C  return macro 
+     188                             C   local a 
+     189                             C  .xcref 
+     190                             C  a: 
+     191                             C   RET 
+     192                             C  ret_l = a 
+     193                             C  .cref 
+     194                             C  endm 
+     195                             C   
+     196                             C  BREAK <CONDRET - conditional return> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-12
+CONDRET - conditional return                                
+
+     197                             C   
+     198                             C  makelab macro l,cc,ncc 
+     199                             C   local a 
+     200                             C   j&ncc a ;; j<NCC> a: 
+     201                             C   return ;; return 
+     202                             C   a: ;; a: 
+     203                             C   ret_&cc = ret_l ;; define ret_<CC> to 
+					be ret_l 
+     204                             C  endm 
+     205                             C   
+     206                             C  condret macro cc,ncc 
+     207                             C   local a,b 
+     208                             C   ifdef ret_l ;; if ret_l is defined 
+     209                             C   if (($ - ret_l) le 126) and ($ gt ret_
+					l) 
+     210                             C   ;; if ret_l is near enough then 
+     211                             C   a: j&cc ret_l ;; a: j<CC> to ret_l 
+     212                             C   ret_&cc = a ;; define ret_<CC> to be a
+					: 
+     213                             C   else 
+     214                             C   makelab a,cc,ncc 
+     215                             C   endif 
+     216                             C   else 
+     217                             C   ifdef ret_&cc ;; if ret_<CC> defined 
+     218                             C   if (($ - ret_&cc) le 126) and ($ gt re
+					t_&cc) 
+     219                             C   ;; if ret_<CC> is near enough 
+     220                             C   a: j&cc ret_&cc ;; a: j<CC> to ret_<CC
+					> 
+     221                             C   ret_&cc = a ;; define ret_<CC> to be a
+					: 
+     222                             C   else 
+     223                             C   makelab a,cc,ncc 
+     224                             C   endif 
+     225                             C   else 
+     226                             C   makelab a,cc,ncc 
+     227                             C   endif 
+     228                             C   endif 
+     229                             C  endm 
+     230                             C  ;condret macro cc,ncc 
+     231                             C  ; local a,b 
+     232                             C  ; ifdef ret_l ; if ret_l is defined 
+     233                             C  ; if (($ - ret_l) le 126) and ($ gt ret
+					_l) 
+     234                             C  ; ; if ret_l is near enough then 
+     235                             C  ; a: j&cc ret_l ; a: j<CC> to ret_l 
+     236                             C  ; ret_&cc = a ; define ret_<CC> to be a
+					: 
+     237                             C  ; exitm 
+     238                             C  ; endif 
+     239                             C  ; endif 
+     240                             C  ; ifdef ret_&cc ; if ret_<CC> defined 
+     241                             C  ; if (($ - ret_&cc) le 126) and ($ gt r
+					et_&cc) 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-13
+CONDRET - conditional return                                
+
+     242                             C  ; ; if ret_<CC> is near enough 
+     243                             C  ; a: j&cc ret_&cc ; a: j<CC> to ret_<CC
+					> 
+     244                             C  ; ret_&cc = a ; define ret_<CC> to be a
+					: 
+     245                             C  ; exitm 
+     246                             C  ; endif 
+     247                             C  ; endif 
+     248                             C  ; j&ncc a ; j<NCC> a: 
+     249                             C  ; return ; return 
+     250                             C  ; a: ; a: 
+     251                             C  ; ret_&cc = ret_l ; define ret_<CC> to 
+					be ret_l 
+     252                             C  ;endm 
+     253                             C  ; 
+     254                             C  BREAK <RETZ - return if zero, links up 
+					shortwise if necessary> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-14
+RETZ - return if zero, links up shortwise if necessary      
+
+     255                             C   
+     256                             C  retz macro 
+     257                             C   condret z,nz 
+     258                             C  endm 
+     259                             C   
+     260                             C  BREAK <RETNZ - return if not zero, link
+					s up shortwise if necessary> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-15
+RETNZ - return if not zero, links up shortwise if necessary 
+
+     261                             C   
+     262                             C  retnz macro 
+     263                             C   condret nz,z 
+     264                             C  endm 
+     265                             C   
+     266                             C  BREAK <RETC - return if carry set, link
+					s up shortwise if necessary> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-16
+RETC - return if carry set, links up shortwise if necessary 
+
+     267                             C   
+     268                             C  retc macro 
+     269                             C   condret c,nc 
+     270                             C  endm 
+     271                             C   
+     272                             C  BREAK <RETNC - return if not carry, lin
+					ks up shortwise if necessary> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-17
+RETNC - return if not carry, links up shortwise if necessary
+
+     273                             C   
+     274                             C  retnc macro 
+     275                             C   condret nc,c 
+     276                             C  endm 
+     277                             C   
+     278                             C  BREAK <CONTEXT - set the DOS context to
+					 a particular register> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-18
+CONTEXT - set the DOS context to a particular register      
+
+     279                             C   
+     280                             C  context macro r 
+     281                             C   PUSH SS 
+     282                             C   POP r 
+     283                             C   ASSUME r:DOSGROUP 
+     284                             C  endm 
+     285                             C   
+     286                             C  IF2 
+     287                             C      %OUT    DOSSYM in Pass 2 
+     288                             C  ENDIF 
+     289                             C   
+     290                             C  ENDIF 
+     291                             C   
+     292 = 0002                      C  DOS_MAJOR_VERSION   EQU      2 
+     293 = 000B                      C  DOS_MINOR_VERSION   EQU     11 
+     294                             C   
+     295                             C  BREAK <Control character definitions> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-19
+Control character definitions                               
+
+     296                             C   
+     297 = 007F                      C  c_DEL       EQU     7Fh         ;    AS
+					CII rubout or delete previous char 
+     298 = 0008                      C  c_BS        EQU     08h         ; ^H AS
+					CII backspace 
+     299 = 000D                      C  c_CR        EQU     0Dh         ; ^M AS
+					CII carriage return 
+     300 = 000A                      C  c_LF        EQU     0Ah         ; ^J AS
+					CII linefeed 
+     301 = 0017                      C  c_ETB       EQU     17h         ; ^W AS
+					CII end of transmission 
+     302 = 0015                      C  c_NAK       EQU     15h         ; ^U AS
+					CII negative acknowledge 
+     303 = 0003                      C  c_ETX       EQU     03h         ; ^C AS
+					CII end of text 
+     304 = 0009                      C  c_HT        EQU     09h         ; ^I AS
+					CII tab 
+     305                             C   
+     306                             C  BREAK <BPB Definition> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-20
+BPB Definition                                              
+
+     307                             C   
+     308                             C   
+     309                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     310                             C  ;                                      
+					                                    ; 
+     311                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     312                             C  ;                                      
+					                                    ; 
+     313                             C  ; Certain structures, constants and sys
+					tem  calls  below  are  private  to ; 
+     314                             C  ; the DOS  and  are  extremely  version
+					-dependent.  They may change at any ; 
+     315                             C  ; time at  the  implementors'  whim.   
+					As  a  result,  they  must  not  be ; 
+     316                             C  ; documented to  the  general  public. 
+					  If  an  extreme case arises, they ; 
+     317                             C  ; must be documented with this warning.
+					                                    ; 
+     318                             C  ;                                      
+					                                    ; 
+     319                             C  ; Those structures and constants that a
+					re subject to  the  above  will  be ; 
+     320                             C  ; marked and bracketed with the flag:  
+					                                    ; 
+     321                             C  ;                                      
+					                                    ; 
+     322                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     323                             C  ;                                      
+					                                    ; 
+     324                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     325                             C   
+     326                             C  BREAK  <Bios Parameter Block> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-21
+Bios Parameter Block                                        
+
+     327                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     328                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     329                             C  ;                                      
+					                                    ; 
+     330                             C   
+     331                             C  ; Bios Parameter Block definition 
+     332                             C  ; This structure is used to build a ful
+					l DPB 
+     333                             C   
+     334                             C  BPBLOCK STRUC 
+     335 0000  ????                  C  BPSECSZ DW      ?       ; Size in bytes
+					 of physical sector 
+     336 0002  ??                    C  BPCLUS  DB      ?       ; Sectors/Alloc
+					 unit 
+     337 0003  ????                  C  BPRES   DW      ?       ; Number of res
+					erved sectors 
+     338 0005  ??                    C  BPFTCNT DB      ?       ; Number of FAT
+					s 
+     339 0006  ????                  C  BPDRCNT DW      ?       ; Number of dir
+					ectory entries 
+     340 0008  ????                  C  BPSCCNT DW      ?       ; Total number 
+					of sectors 
+     341 000A  ??                    C  BPMEDIA DB      ?       ; Media descrip
+					tor byte 
+     342 000B  ????                  C  BPFTSEC DW      ?       ; Number of sec
+					tors taken up by one FAT 
+     343 000D                        C  BPBLOCK ENDS 
+     344                             C  ;                                      
+					                                    ; 
+     345                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     346                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     347                             C   
+     348                             C  BREAK <Disk I/O Buffer Header> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-22
+Disk I/O Buffer Header                                      
+
+     349                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     350                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     351                             C  ;                                      
+					                                    ; 
+     352                             C   
+     353                             C  ; Field definition for I/O buffer infor
+					mation 
+     354                             C   
+     355                             C  BUFFINFO        STRUC 
+     356 0000  ????????              C  NEXTBUF         DD      ?       ; Point
+					er to next buffer in list 
+     357                             C  ; The next two items are often refed as
+					 a word 
+     358 0004  ??                    C  BUFDRV          DB      ?       ; Logic
+					al drive # assoc with buffer FF = free 
+     359 0005  ??                    C  BUFDIRTY        DB      ?       ; Dirty
+					 flag 
+     360 0006  ??                    C  BUFPRI          DB      ?       ; Buffe
+					r selection priority (see EQUs below) 
+     361 0007  ??                    C  VISIT           DB      ?       ; Visit
+					 flag for buffer pool scans 
+     362 0008  ????                  C  BUFSECNO        DW      ?       ; Secto
+					r number of buffer 
+     363                             C  ; The next two items are often refed as
+					 a word 
+     364 000A  ??                    C  BUFWRTCNT       DB      ?       ; For F
+					AT sectors, # times sector written out 
+     365 000B  ??                    C  BUFWRTINC       DB      ?       ; "   "
+					     "   , # sectors between each write
+					 
+     366 000C  ????????              C  BUFDRVDP        DD      ?       ; Point
+					er to drive parameters 
+     367 0010                        C  BUFFINFO        ENDS 
+     368                             C   
+     369 = 0010                      C  BUFINSIZ        EQU     SIZE BUFFINFO 
+     370                             C                                  ; Size 
+					of structure in bytes 
+     371                             C   
+     372 = 0000                      C  FREEPRI EQU     0 
+     373 = 0002                      C  LBRPRI  EQU     2               ; Last 
+					byte of buffer read 
+     374 = 0004                      C  LBWPRI  EQU     4               ; Last 
+					byte written 
+     375 = 0006                      C  RPRI    EQU     6               ; Read 
+					but not last byte 
+     376 = 0008                      C  WPRI    EQU     8               ; Writt
+					en but not last byte 
+     377 = 000F                      C  DIRPRI  EQU     15              ; Direc
+					tory Sector 
+     378 = 001E                      C  FATPRI  EQU     30              ; FAT s
+					ector 
+     379                             C  ;                                      
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-23
+Disk I/O Buffer Header                                      
+
+					                                    ; 
+     380                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     381                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     382                             C   
+     383                             C  BREAK <User stack inside of system call
+					> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-24
+User stack inside of system call                            
+
+     384                             C  ; Location of user registers relative u
+					ser stack pointer 
+     385                             C   
+     386                             C  user_environ    STRUC 
+     387 0000  ????                  C  user_AX     DW      ? 
+     388 0002  ????                  C  user_BX     DW      ? 
+     389 0004  ????                  C  user_CX     DW      ? 
+     390 0006  ????                  C  user_DX     DW      ? 
+     391 0008  ????                  C  user_SI     DW      ? 
+     392 000A  ????                  C  user_DI     DW      ? 
+     393 000C  ????                  C  user_BP     DW      ? 
+     394 000E  ????                  C  user_DS     DW      ? 
+     395 0010  ????                  C  user_ES     DW      ? 
+     396 0012  ????                  C  user_IP     DW      ? 
+     397 0014  ????                  C  user_CS     DW      ? 
+     398 0016  ????                  C  user_F      DW      ? 
+     399 0018                        C  user_environ    ENDS 
+     400                             C   
+     401                             C  BREAK <interrupt definitions> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-25
+interrupt definitions                                       
+
+     402                             C   
+     403 = 0020                      C  INTTAB          EQU     20H 
+     404 = 0080                      C  INTBASE         EQU     4 * inttab 
+     405 = 00C0                      C  ENTRYPOINT      EQU     INTBASE+40H 
+     406                             C   
+     407                             C          ENDIF 
+     408                             C   
+     409                             C  ; 
+     410                             C  ; interrupt assignments 
+     411                             C  ; 
+     412                             C          IF      NOT ALTVECT 
+     413 =                           C  int_abort           EQU     INTTAB     
+					     ; abort process 
+     414 = 0021                      C  int_command         EQU     int_abort+1
+					     ; call MSDOS 
+     415 = 0022                      C  int_terminate       EQU     int_abort+2
+					     ; int to terminate address 
+     416 = 0023                      C  int_ctrl_c          EQU     int_abort+3
+					     ; ^c trapper 
+     417 = 0024                      C  int_fatal_abort     EQU     int_abort+4
+					     ; hard disk error 
+     418 = 0025                      C  int_disk_read       EQU     int_abort+5
+					     ; logical sector disk read 
+     419 = 0026                      C  int_disk_write      EQU     int_abort+6
+					     ; logical sector disk write 
+     420 = 0027                      C  int_keep_process    EQU     int_abort+7
+					     ; terminate program and stay 
+     421                             C                                         
+					     ; resident 
+     422                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     423                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     424                             C  ;                                      
+					                                    ; 
+     425 = 0028                      C  int_spooler         EQU     int_abort+8
+					     ; spooler call 
+     426 = 0029                      C  int_fastcon         EQU     int_abort+9
+					     ; fast CON interrupt 
+     427                             C  ;                                      
+					                                    ; 
+     428                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     429                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     430                             C          ENDIF 
+     431                             C   
+     432 = 0080                      C  addr_int_abort          EQU    4 * int_
+					abort 
+     433 = 0084                      C  addr_int_command        EQU    4 * int_
+					command 
+     434 = 0088                      C  addr_int_terminate      EQU    4 * int_
+					terminate 
+     435 = 008C                      C  addr_int_ctrl_c         EQU    4 * int_
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-26
+interrupt definitions                                       
+
+					ctrl_c 
+     436 = 0090                      C  addr_int_fatal_abort    EQU    4 * int_
+					fatal_abort 
+     437 = 0094                      C  addr_int_disk_read      EQU    4 * int_
+					disk_read 
+     438 = 0098                      C  addr_int_disk_write     EQU    4 * int_
+					disk_write 
+     439 = 009C                      C  addr_int_keep_process   EQU    4 * int_
+					keep_process 
+     440                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     441                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     442                             C  ;                                      
+					                                    ; 
+     443 = 00A0                      C  addr_int_spooler        EQU    4 * int_
+					spooler 
+     444 = 00A4                      C  addr_int_fastcon        EQU    4 * int_
+					fastcon 
+     445                             C  ;                                      
+					                                    ; 
+     446                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     447                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     448                             C   
+     449                             C  BREAK <Disk map> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-27
+Disk map                                                    
+
+     450                             C  ;  MSDOS partitions the disk into 4 sec
+					tions: 
+     451                             C  ; 
+     452                             C  ;  phys sector 0:   +------------------
+					-+ 
+     453                             C  ;       |           | boot/reserved    
+					 | 
+     454                             C  ;       |           +------------------
+					-+ 
+     455                             C  ;       |           |  File allocation 
+					 | 
+     456                             C  ;       v           |      table(s)    
+					 | 
+     457                             C  ;                   |  (multiple copies
+					 | 
+     458                             C  ;                   |     are kept)    
+					 | 
+     459                             C  ;                   +------------------
+					-+ 
+     460                             C  ;                   |     Directory    
+					 | 
+     461                             C  ;                   +------------------
+					-+ 
+     462                             C  ;                   |     File space   
+					 | 
+     463                             C  ;                   +------------------
+					-+ 
+     464                             C  ;                   |   Unaddressable  
+					 | 
+     465                             C  ;                   |  (to end of disk)
+					 | 
+     466                             C  ;                   +------------------
+					-+ 
+     467                             C  ; 
+     468                             C  ; All partition boundaries are sector b
+					oundaries.  The size of the FAT is 
+     469                             C  ; adjusted to maximize the file space a
+					ddressable. 
+     470                             C   
+     471                             C  BREAK <Directory entry> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-28
+Directory entry                                             
+
+     472                             C   
+     473                             C  ; 
+     474                             C  ;       +---------------------------+ 
+     475                             C  ;       |  (12 BYTE) filename/ext   |  
+					     0       0 
+     476                             C  ;       +---------------------------+ 
+     477                             C  ;       |     (BYTE) attributes     |  
+					     11      B 
+     478                             C  ;       +---------------------------+ 
+     479                             C  ;       |    (10 BYTE) reserved     |  
+					     12      C 
+     480                             C  ;       +---------------------------+ 
+     481                             C  ;       | (WORD) time of last write |  
+					     22      16 
+     482                             C  ;       +---------------------------+ 
+     483                             C  ;       | (WORD) date of last write |  
+					     24      18 
+     484                             C  ;       +---------------------------+ 
+     485                             C  ;       |   (WORD) First cluster    |  
+					     26      1A 
+     486                             C  ;       +---------------------------+ 
+     487                             C  ;       |     (DWORD) file size     |  
+					     28      1C 
+     488                             C  ;       +---------------------------+ 
+     489                             C  ; 
+     490                             C  ;   First byte of filename  = E5 -> fre
+					e directory entry 
+     491                             C  ;                           = 00 -> end
+					 of allocated directory 
+     492                             C  ;   Time:   Bits 0-4=seconds/2, bits 5-
+					10=minute, 11-15=hour 
+     493                             C  ;   Date:   Bits 0-4=day, bits 5-8=mont
+					h, bits 9-15=year-1980 
+     494                             C  ; 
+     495                             C  dir_entry   STRUC 
+     496 0000  000B[                 C  dir_name    DB      11 DUP (?)         
+					 ; file name 
+     497            ??               C  
+     498                         ]   C  
+     499                             C  
+     500 000B  ??                    C  dir_attr    DB      ?                  
+					 ; attribute bits 
+     501 000C  000A[                 C  dir_pad     DB      10 DUP (?)         
+					 ; reserved for expansion 
+     502            ??               C  
+     503                         ]   C  
+     504                             C  
+     505 0016  ????                  C  dir_time    DW      ?                  
+					 ; time of last write 
+     506 0018  ????                  C  dir_date    DW      ?                  
+					 ; date of last write 
+     507 001A  ????                  C  dir_first   DW      ?                  
+					 ; first allocation unit of file 
+     508 001C  ????                  C  dir_size_l  DW      ?                  
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-29
+Directory entry                                             
+
+					 ; low 16 bits of file size 
+     509 001E  ????                  C  dir_size_h  DW      ?                  
+					 ; high 16 bits of file size 
+     510 0020                        C  dir_entry   ENDS 
+     511                             C   
+     512 = 0001                      C  attr_read_only      EQU      1h 
+     513 = 0002                      C  attr_hidden         EQU      2h 
+     514 = 0004                      C  attr_system         EQU      4h 
+     515 = 0008                      C  attr_volume_id      EQU      8h 
+     516 = 0010                      C  attr_directory      EQU     10h 
+     517 = 0020                      C  attr_archive        EQU     20h 
+     518                             C   
+     519 = 0016                      C  attr_all            EQU     attr_hidden
+					+attr_system+attr_directory 
+     520                             C                                         
+					 ; OR of hard attributes for FINDENTRY 
+     521                             C   
+     522 = 0021                      C  attr_ignore         EQU     attr_read_o
+					nly+attr_archive 
+     523                             C                                         
+					 ; ignore this(ese) attribute(s) during
+					 
+     524                             C                                         
+					 ; search first/next 
+     525                             C   
+     526 = 0027                      C  attr_changeable     EQU     attr_read_o
+					nly+attr_hidden+attr_system+attr_archiv
+					e 
+     527                             C                                         
+					 ; changeable via CHMOD 
+     528                             C   
+     529                             C  BREAK <File allocation Table informatio
+					n> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-30
+File allocation Table information                           
+
+     530                             C  ; 
+     531                             C  ; The File Allocation Table uses a 12-b
+					it entry for each allocation unit on 
+     532                             C  ; the disk.  These entries are packed, 
+					two for every three bytes.  The content
+					s 
+     533                             C  ; of entry number N is found by 1) mult
+					iplying N by 1.5; 2) adding the result 
+     534                             C  ; to the base address of the Allocation
+					 Table; 3) fetching the 16-bit word 
+     535                             C  ; at this address; 4) If N was odd (so 
+					that N*1.5 was not an integer), shift 
+     536                             C  ; the word right four bits; 5) mask to 
+					12 bits (AND with 0FFF hex).  Entry 
+     537                             C  ; number zero is used as an end-of-file
+					 trap in the OS and is passed to the 
+     538                             C  ; BIOS to help determine disk format.  
+					Entry 1 is reserved for future use. 
+     539                             C  ; The first available allocation unit i
+					s assigned entry number two, and even 
+     540                             C  ; though it is the first, is called clu
+					ster 2.  Entries greater than 0FF8H 
+     541                             C  ; are end of file marks; entries of zer
+					o are unallocated.  Otherwise, the 
+     542                             C  ; contents of a FAT entry is the number
+					 of the next cluster in the file. 
+     543                             C  ; 
+     544                             C  ; Clusters with bad sectors are tagged 
+					with FF7H.  Any non-zero number would 
+     545                             C  ; do because these clusters show as all
+					ocated, but are not part of any 
+     546                             C  ; allocation chain and thus will never 
+					be allocated to a file.  A particular 
+     547                             C  ; number is selected so that disk check
+					ing programs know what to do (ie.  a 
+     548                             C  ; cluster with entry FF7H which is not 
+					in a chain is not an error). 
+     549                             C   
+     550                             C  BREAK <DPB structure> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-31
+DPB structure                                               
+
+     551                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     552                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     553                             C  ;                                      
+					                                    ; 
+     554                             C   
+     555 = 0040                      C  DIRSTRLEN       EQU     64      ; Max l
+					ength in bytes of directory strings 
+     556                             C   
+     557                             C  dpb     STRUC 
+     558 0000  ??                    C  dpb_drive           DB      ?   ; Logic
+					al drive # assoc with DPB (A=0,B=1,...)
+					 
+     559 0001  ??                    C  dpb_UNIT            DB      ?   ; Drive
+					r unit number of DPB 
+     560 0002  ????                  C  dpb_sector_size     DW      ?   ; Size 
+					of physical sector in bytes 
+     561 0004  ??                    C  dpb_cluster_mask    DB      ?   ; Secto
+					rs/cluster - 1 
+     562 0005  ??                    C  dpb_cluster_shift   DB      ?   ; Log2 
+					of sectors/cluster 
+     563 0006  ????                  C  dpb_first_FAT       DW      ?   ; Start
+					ing record of FATs 
+     564 0008  ??                    C  dpb_FAT_count       DB      ?   ; Numbe
+					r of FATs for this drive 
+     565 0009  ????                  C  dpb_root_entries    DW      ?   ; Numbe
+					r of directory entries 
+     566 000B  ????                  C  dpb_first_sector    DW      ?   ; First
+					 sector of first cluster 
+     567 000D  ????                  C  dpb_max_cluster     DW      ?   ; Numbe
+					r of clusters on drive + 1 
+     568 000F  ??                    C  dpb_FAT_size        DB      ?   ; Numbe
+					r of records occupied by FAT 
+     569 0010  ????                  C  dpb_dir_sector      DW      ?   ; Start
+					ing record of directory 
+     570 0012  ????????              C  dpb_driver_addr     DD      ?   ; Point
+					er to driver 
+     571 0016  ??                    C  dpb_media           DB      ?   ; Media
+					 byte 
+     572 0017  ??                    C  dpb_first_access    DB      ?   ; This 
+					is initialized to -1 to force a media 
+     573                             C                                  ; check
+					 the first time this DPB is used 
+     574 0018  ????????              C  dpb_next_dpb        DD      ?   ; Point
+					er to next Drive parameter block 
+     575 001C  ????                  C  dpb_current_dir     DW      ?   ; Clust
+					er number of start of current directory
+					 
+     576                             C                                  ; 0 ind
+					icates root, -1 indicates invalid (disk
+					 
+     577                             C                                  ; ?  ch
+					anged) 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-32
+DPB structure                                               
+
+     578 001E  0040[                 C  dpb_dir_text        DB      DIRSTRLEN D
+					UP(?) 
+     579            ??               C  
+     580                         ]   C  
+     581                             C  
+     582                             C                                  ; ASCIZ
+					 string of current directory 
+     583 005E                        C  dpb     ENDS 
+     584                             C   
+     585 = 005E                      C  DPBSIZ  EQU     SIZE dpb        ; Size 
+					of the structure in bytes 
+     586                             C   
+     587 = 000D                      C  DSKSIZ  =       dpb_max_cluster ; Size 
+					of disk (temp used during init only) 
+     588                             C  ;                                      
+					                                    ; 
+     589                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     590                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     591                             C   
+     592                             C  BREAK <File Control Block definition> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-33
+File Control Block definition                               
+
+     593                             C  ; 
+     594                             C  ; Field definition for FCBs 
+     595                             C  ; The FCB has the following structure: 
+     596                             C  ; 
+     597                             C  ;       +---------------------------+ 
+     598                             C  ;       |   Drive indicator(byte)   | 
+     599                             C  ;       +---------------------------+ 
+     600                             C  ;       |    Filename (8 chars)     | 
+     601                             C  ;       +---------------------------+ 
+     602                             C  ;       |    Extension (3 chars)    | 
+     603                             C  ;       +---------------------------+ 
+     604                             C  ;       |   Current Extent(word)    | 
+     605                             C  ;       +---------------------------+ 
+     606                             C  ;       |    Record size (word)     | 
+     607                             C  ;       +---------------------------+ 
+     608                             C  ;       |    File Size (2 words)    | 
+     609                             C  ;       +---------------------------+ 
+     610                             C  ;       |       Date of write       | 
+     611                             C  ;       +---------------------------+ 
+     612                             C  ;       |       Time of write       | 
+     613                             C  ;       +---------------------------+ 
+     614                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     615                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     616                             C  ;                                      
+					                                    ; 
+     617                             C  ;       | Flags:                    | 
+     618                             C  ;       |  bit 7=0 file/1 device    | 
+     619                             C  ;       |  bit 6=0 if dirty         | 
+     620                             C  ;       |  bits 0-5 deviceid        | 
+     621                             C  ;       +---------------------------+ 
+     622                             C  ;       |   first cluster in file   | 
+     623                             C  ;       +---------------------------+ 
+     624                             C  ;       | position of last cluster  | 
+     625                             C  ;       +---------------------------+ 
+     626                             C  ;       |   last cluster accessed   |  
+					 12 bit-+--- packed in 3 bytes 
+     627                             C  ;       +---------------------------+  
+					        | 
+     628                             C  ;       |     parent directory      |  
+					 <------+ 
+     629                             C  ;       +---------------------------+ 
+     630                             C  ;                                      
+					                                    ; 
+     631                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     632                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     633                             C  ;       |    next record number     | 
+     634                             C  ;       +---------------------------+ 
+     635                             C  ;       |   random record number    | 
+     636                             C  ;       +---------------------------+ 
+     637                             C  ; 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-34
+File Control Block definition                               
+
+     638                             C   
+     639                             C  sys_fcb     STRUC 
+     640 0000  ??                    C  fcb_drive   DB      ? 
+     641 0001  0008[                 C  fcb_name    DB      8 DUP (?) 
+     642            ??               C  
+     643                         ]   C  
+     644                             C  
+     645 0009  0003[                 C  fcb_ext     DB      3 DUP (?) 
+     646            ??               C  
+     647                         ]   C  
+     648                             C  
+     649 000C  ????                  C  fcb_EXTENT  DW      ? 
+     650 000E  ????                  C  fcb_RECSIZ  DW      ?       ; Size of r
+					ecord (user settable) 
+     651 0010  ????                  C  fcb_FILSIZ  DW      ?       ; Size of f
+					ile in bytes; used with the following 
+     652                             C                              ; word 
+     653 0012  ????                  C  fcb_DRVBP   DW      ?       ; BP for SE
+					ARCH FIRST and SEARCH NEXT 
+     654 0014  ????                  C  fcb_FDATE   DW      ?       ; Date of l
+					ast writing 
+     655 0016  ????                  C  fcb_FTIME   DW      ?       ; Time of l
+					ast writing 
+     656                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     657                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     658                             C  ;                                      
+					                                    ; 
+     659 0018  ??                    C  fcb_DEVID   DB      ?       ; Device ID
+					 number, bits 0-5 if file. 
+     660                             C                              ; bit 7=0 f
+					or file, bit 7=1 for I/O device 
+     661                             C                              ; If file, 
+					bit 6=0 if dirty 
+     662                             C                              ; If I/O de
+					vice, bit 6=0 if EOF (input) 
+     663                             C                              ;          
+					     Bit 5=1 if Raw mode 
+     664                             C                              ;          
+					     Bit 0=1 if console input device 
+     665                             C                              ;          
+					     Bit 1=1 if console output device 
+     666                             C                              ;          
+					     Bit 2=1 if null device 
+     667                             C                              ;          
+					     Bit 3=1 if clock device 
+     668 0019  ????                  C  fcb_FIRCLUS DW      ?       ; First clu
+					ster of file 
+     669 001B  ????                  C  fcb_CLUSPOS DW      ?       ; Position 
+					of last cluster accessed 
+     670 001D  ????                  C  fcb_LSTCLUS DW      ?       ; Last clus
+					ter accessed and directory pack 2 12 
+     671 001F  ??                    C              DB      ?       ; bit numbe
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-35
+File Control Block definition                               
+
+					rs into 24 bits... 
+     672                             C  ;                                      
+					                                    ; 
+     673                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     674                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     675 0020  ??                    C  fcb_NR      DB      ?       ; Next reco
+					rd 
+     676 0021  0004[                 C  fcb_RR      DB      4 DUP (?)          
+					     ; Random record 
+     677            ??               C  
+     678                         ]   C  
+     679                             C  
+     680 0025                        C  sys_fcb     ENDS 
+     681                             C   
+     682 = 0010                      C  FILDIRENT       = fcb_FILSIZ           
+					 ; Used only by SEARCH FIRST and SEARCH
+					 
+     683                             C                                         
+					 ; NEXT 
+     684                             C   
+     685                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     686                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     687                             C  ;                                      
+					                                    ; 
+     688 = 0040                      C  devid_file_clean        EQU     40h    
+					 ; true if file and not written 
+     689 = 003F                      C  devid_file_mask_drive   EQU     3Fh    
+					 ; mask for drive number 
+     690                             C   
+     691 = 0080                      C  devid_device            EQU     80h    
+					 ; true if a device 
+     692 = 0040                      C  devid_device_EOF        EQU     40h    
+					 ; true if end of file reached 
+     693 = 0020                      C  devid_device_raw        EQU     20h    
+					 ; true if in raw mode 
+     694 = 0010                      C  devid_device_special    EQU     10h    
+					 ; true if special device 
+     695 = 0008                      C  devid_device_clock      EQU     08h    
+					 ; true if clock device 
+     696 = 0004                      C  devid_device_null       EQU     04h    
+					 ; true if null device 
+     697 = 0002                      C  devid_device_con_out    EQU     02h    
+					 ; true if console output 
+     698 = 0001                      C  devid_device_con_in     EQU     01h    
+					 ; true if consle input 
+     699                             C   
+     700                             C  ; 
+     701                             C  ; structure of devid field as returned 
+					by IOCTL is: 
+     702                             C  ; 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-36
+File Control Block definition                               
+
+     703                             C  ;       BIT     7   6   5   4   3   2  
+					 1   0 
+     704                             C  ;             |---|---|---|---|---|---|
+					---|---| 
+     705                             C  ;             | I | E | R | S | I | I |
+					 I | I | 
+     706                             C  ;             | S | O | A | P | S | S |
+					 S | S | 
+     707                             C  ;             | D | F | W | E | C | N |
+					 C | C | 
+     708                             C  ;             | E |   |   | C | L | U |
+					 O | I | 
+     709                             C  ;             | V |   |   | L | K | L |
+					 T | N | 
+     710                             C  ;             |---|---|---|---|---|---|
+					---|---| 
+     711                             C  ;       ISDEV = 1 if this channel is a 
+					device 
+     712                             C  ;             = 0 if this channel is a 
+					disk file 
+     713                             C  ; 
+     714                             C  ;       If ISDEV = 1 
+     715                             C  ; 
+     716                             C  ;             EOF = 0 if End Of File on
+					 input 
+     717                             C  ;             RAW = 1 if this device is
+					 in Raw mode 
+     718                             C  ;                 = 0 if this device is
+					 cooked 
+     719                             C  ;             ISCLK = 1 if this device 
+					is the clock device 
+     720                             C  ;             ISNUL = 1 if this device 
+					is the null device 
+     721                             C  ;             ISCOT = 1 if this device 
+					is the console output 
+     722                             C  ;             ISCIN = 1 if this device 
+					is the console input 
+     723                             C  ; 
+     724                             C  ;       If ISDEV = 0 
+     725                             C  ;             EOF = 0 if channel has be
+					en written 
+     726                             C  ;             Bits 0-5  are  the  block
+					  device  number  for 
+     727                             C  ;                 the channel (0 = A, 1
+					 = B, ...) 
+     728                             C  ; 
+     729 = 0080                      C  devid_ISDEV     EQU     80h 
+     730 = 0040                      C  devid_EOF       EQU     40h 
+     731 = 0020                      C  devid_RAW       EQU     20h 
+     732 = 0010                      C  devid_SPECIAL   EQU     10H 
+     733 = 0008                      C  devid_ISCLK     EQU     08h 
+     734 = 0004                      C  devid_ISNUL     EQU     04h 
+     735 = 0002                      C  devid_ISCOT     EQU     02h 
+     736 = 0001                      C  devid_ISCIN     EQU     01h 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-37
+File Control Block definition                               
+
+     737                             C   
+     738 = 001F                      C  devid_block_dev EQU     1Fh            
+					 ; mask for block device number 
+     739                             C   
+     740                             C  ; 
+     741                             C  ; find first/next buffer 
+     742                             C  ; 
+     743                             C  find_buf    STRUC 
+     744 0000  ??                    C  find_buf_sattr      DB  ?           ; a
+					ttribute of search 
+     745 0001  ??                    C  find_buf_drive      DB  ?           ; d
+					rive of search 
+     746 0002  000B[                 C  find_buf_name       DB  11 DUP (?)  ; f
+					ormatted name 
+     747            ??               C  
+     748                         ]   C  
+     749                             C  
+     750 000D  ????                  C  find_buf_LastEnt    DW  ?           ; L
+					astEnt 
+     751 000F  ????????              C  find_buf_ThisDPB    DD  ?           ; T
+					his DPB 
+     752 0013  ????                  C  find_buf_DirStart   DW  ?           ; D
+					irStart 
+     753                             C  ;                                      
+					                                    ; 
+     754                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     755                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     756                             C   
+     757 0015  ??                    C  find_buf_attr       DB  ?           ; a
+					ttribute found 
+     758 0016  ????                  C  find_buf_time       DW  ?           ; t
+					ime 
+     759 0018  ????                  C  find_buf_date       DW  ?           ; d
+					ate 
+     760 001A  ????                  C  find_buf_size_l     DW  ?           ; l
+					ow(size) 
+     761 001C  ????                  C  find_buf_size_h     DW  ?           ; h
+					igh(size) 
+     762 001E  000D[                 C  find_buf_pname      DB  13 DUP (?)  ; p
+					acked name 
+     763            ??               C  
+     764                         ]   C  
+     765                             C  
+     766 002B                        C  find_buf    ENDS 
+     767                             C   
+     768                             C  BREAK <Process data block> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-38
+Process data block                                          
+
+     769                             C  ; 
+     770                             C  ; Process data block (otherwise known a
+					s program header) 
+     771                             C  ; 
+     772                             C   
+     773 = 0014                      C  FilPerProc          EQU     20 
+     774                             C   
+     775                             C  Process_data_block  STRUC 
+     776 0000  ????                  C  PDB_Exit_Call       DW      ?          
+					 ; INT int_abort system terminate 
+     777 0002  ????                  C  PDB_block_len       DW      ?          
+					 ; size of execution block 
+     778 0004  ??                    C                      DB      ? 
+     779 0005  0005[                 C  PDB_CPM_Call        DB  5 DUP (?)      
+					 ; ancient call to system 
+     780            ??               C  
+     781                         ]   C  
+     782                             C  
+     783 000A  ????????              C  PDB_Exit            DD      ?          
+					 ; pointer to exit routine 
+     784 000E  ????????              C  PDB_Ctrl_C          DD      ?          
+					 ; pointer to ^C routine 
+     785 0012  ????????              C  PDB_Fatal_abort     DD      ?          
+					 ; pointer to fatal error 
+     786                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     787                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     788                             C  ;                                      
+					                                    ; 
+     789 0016  ????                  C  PDB_Parent_PID      DW      ?          
+					 ; PID of parent (terminate PID) 
+     790 0018  0014[                 C  PDB_JFN_Table       DB  FilPerProc DUP 
+					(?) 
+     791            ??               C  
+     792                         ]   C  
+     793                             C  
+     794                             C                                         
+					 ; indices into system table 
+     795                             C  ;                                      
+					                                    ; 
+     796                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     797                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     798 002C  ????                  C  PDB_environ         DW      ?          
+					 ; seg addr of environment 
+     799                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     800                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     801                             C  ;                                      
+					                                    ; 
+     802 002E  ????????              C  PDB_User_stack      DD      ?          
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-39
+Process data block                                          
+
+					 ; stack of self during system calls 
+     803 0032  001E[                 C  PDB_PAD1            DB      1Eh DUP (?)
+					 
+     804            ??               C  
+     805                         ]   C  
+     806                             C  
+     807                             C  ;                                      
+					                                    ; 
+     808                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     809                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     810 0050  0005[                 C  PDB_Call_system     DB      5 DUP (?)  
+					 ; portable method of system call 
+     811            ??               C  
+     812                         ]   C  
+     813                             C  
+     814                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     815                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     816                             C  ;                                      
+					                                    ; 
+     817 0055  0006[                 C  PDB_PAD2            DB      6h DUP (?) 
+					 ; 
+     818            ??               C  
+     819                         ]   C  
+     820                             C  
+     821                             C  ;                                      
+					                                    ; 
+     822                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     823                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     824 005B                        C  Process_data_block  ENDS 
+     825                             C   
+     826                             C  BREAK <EXEC and EXE file structures> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-40
+EXEC and EXE file structures                                
+
+     827                             C  ; 
+     828                             C  ; EXEC arg block - load/go program 
+     829                             C  ; 
+     830                             C   
+     831                             C  ; 
+     832                             C  ; The following get used as arguments t
+					o the EXEC system call.  They indicate 
+     833                             C  ; whether or not the program is execute
+					d or whether or not a program header 
+     834                             C  ; gets created. 
+     835                             C  ; 
+     836 = 0001                      C  exec_func_no_execute    EQU 1          
+					 ; no execute bit 
+     837 = 0002                      C  exec_func_overlay       EQU 2          
+					 ; overlay bit 
+     838                             C   
+     839                             C  Exec0           STRUC 
+     840 0000  ????                  C  Exec0_environ   DW      ?              
+					 ; seg addr of environment 
+     841 0002  ????????              C  Exec0_com_line  DD      ?              
+					 ; pointer to asciz command line 
+     842 0006  ????????              C  Exec0_5C_FCB    DD      ?              
+					 ; default fcb at 5C 
+     843 000A  ????????              C  Exec0_6C_FCB    DD      ?              
+					 ; default fcb at 6C 
+     844 000E                        C  Exec0           ENDS 
+     845                             C   
+     846                             C  Exec1           STRUC 
+     847 0000  ????                  C  Exec1_environ   DW      ?              
+					 ; seg addr of environment 
+     848 0002  ????????              C  Exec1_com_line  DD      ?              
+					 ; pointer to asciz command line 
+     849 0006  ????????              C  Exec1_5C_FCB    DD      ?              
+					 ; default fcb at 5C 
+     850 000A  ????????              C  Exec1_6C_FCB    DD      ?              
+					 ; default fcb at 6C 
+     851 000E  ????                  C  Exec1_SP        DW      ?              
+					 ; stack pointer of program 
+     852 0010  ????                  C  Exec1_SS        DW      ?              
+					 ; stack seg register of program 
+     853 0012  ????                  C  Exec1_IP        DW      ?              
+					 ; entry point IP 
+     854 0014  ????                  C  Exec1_CS        DW      ?              
+					 ; entry point CS 
+     855 0016                        C  Exec1           ENDS 
+     856                             C   
+     857                             C  Exec3           STRUC 
+     858 0000  ????                  C  Exec3_load_addr DW      ?              
+					 ; seg address of load point 
+     859 0002  ????                  C  Exec3_reloc_fac DW      ?              
+					 ; relocation factor 
+     860 0004                        C  Exec3           ENDS 
+     861                             C   
+     862                             C  ; 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-41
+EXEC and EXE file structures                                
+
+     863                             C  ; Exit codes in upper byte 
+     864                             C  ; 
+     865 = 0000                      C  Exit_terminate      EQU     0 
+     866 = 0000                      C  Exit_abort          EQU     0 
+     867 = 0001                      C  Exit_Ctrl_C         EQU     1 
+     868 = 0002                      C  Exit_Hard_Error     EQU     2 
+     869 = 0003                      C  Exit_Keep_process   EQU     3 
+     870                             C   
+     871                             C  ; 
+     872                             C  ; EXE file header 
+     873                             C  ; 
+     874                             C   
+     875                             C  EXE_file    STRUC 
+     876 0000  ????                  C  exe_signature   DW  ?                  
+					 ; must contain 4D5A  (yay zibo!) 
+     877 0002  ????                  C  exe_len_mod_512 DW  ?                  
+					 ; low 9 bits of length 
+     878 0004  ????                  C  exe_pages       DW  ?                  
+					 ; number of 512b pages in file 
+     879 0006  ????                  C  exe_rle_count   DW  ?                  
+					 ; count of reloc entries 
+     880 0008  ????                  C  exe_par_dir     DW  ?                  
+					 ; number of paragraphs before image 
+     881 000A  ????                  C  exe_min_BSS     DW  ?                  
+					 ; minimum number of para of BSS 
+     882 000C  ????                  C  exe_max_BSS     DW  ?                  
+					 ; max number of para of BSS 
+     883 000E  ????                  C  exe_SS          DW  ?                  
+					 ; stack of image 
+     884 0010  ????                  C  exe_SP          DW  ?                  
+					 ; SP of image 
+     885 0012  ????                  C  exe_chksum      DW  ?                  
+					 ; checksum  of file (ignored) 
+     886 0014  ????                  C  exe_IP          DW  ?                  
+					 ; IP of entry 
+     887 0016  ????                  C  exe_CS          DW  ?                  
+					 ; CS of entry 
+     888 0018  ????                  C  exe_rle_table   DW  ?                  
+					 ; byte offset of reloc table 
+     889 001A  ????                  C  exe_iov         DW  ?                  
+					 ; overlay number (0 for root) 
+     890 001C  ????????              C  exe_sym_tab     DD  ?                  
+					 ; offset of symbol table in file 
+     891 0020                        C  EXE_file    ENDS 
+     892                             C   
+     893 = 5A4D                      C  exe_valid_signature     EQU 5A4Dh 
+     894 = 4D5A                      C  exe_valid_old_signature EQU 4D5Ah 
+     895                             C   
+     896                             C  symbol_entry    STRUC 
+     897 0000  ????????              C  sym_value       DD  ? 
+     898 0004  ????                  C  sym_type        DW  ? 
+     899 0006  ??                    C  sym_len         DB  ? 
+     900 0007  00FF[                 C  sym_name        DB  255 dup (?) 
+     901            ??               C  
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-42
+EXEC and EXE file structures                                
+
+     902                         ]   C  
+     903                             C  
+     904 0106                        C  symbol_entry    ENDS 
+     905                             C   
+     906                             C  BREAK <Internal system file table forma
+					t> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-43
+Internal system file table format                           
+
+     907                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     908                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     909                             C  ;                                      
+					                                    ; 
+     910                             C  ; 
+     911                             C  ; system file table 
+     912                             C  ; 
+     913                             C   
+     914                             C  sft             STRUC 
+     915 0000  ????????              C  sft_link        DD      ? 
+     916 0004  ????                  C  sft_count       DW      ?              
+					 ; number of entries 
+     917 0006  ????                  C  sft_table       DW      ?              
+					 ; beginning of array of the following 
+     918 0008                        C  sft             ENDS 
+     919                             C   
+     920                             C  ; 
+     921                             C  ; system file table entry 
+     922                             C  ; 
+     923                             C   
+     924                             C  sf_entry        STRUC 
+     925 0000  ??                    C  sf_ref_count    DB      ?              
+					 ; number of processes sharing fcb 
+     926 0001  ??                    C  sf_mode         DB      ?              
+					 ; mode of access 
+     927 0002  ??                    C  sf_attr         DB      ?              
+					 ; attribute of file 
+     928 0003  0025[                 C  sf_fcb          DB      (SIZE sys_fcb) 
+					DUP (?) 
+     929            ??               C  
+     930                         ]   C  
+     931                             C  
+     932                             C                                         
+					 ; actual FCB 
+     933 0028                        C  sf_entry        ENDS 
+     934                             C   
+     935 = 0005                      C  sf_default_number   EQU     5h 
+     936                             C  ;                                      
+					                                    ; 
+     937                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     938                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     939                             C   
+     940                             C  BREAK <Memory arena structure> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-44
+Memory arena structure                                      
+
+     941                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+     942                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+     943                             C  ;                                      
+					                                    ; 
+     944                             C  ; 
+     945                             C  ; arena item 
+     946                             C  ; 
+     947                             C  arena   STRUC 
+     948 0000  ??                    C  arena_signature     DB  ?              
+					 ; 4D for valid item, 5A for last item 
+     949 0001  ????                  C  arena_owner         DW  ?              
+					 ; owner of arena item 
+     950 0003  ????                  C  arena_size          DW  ?              
+					 ; size in paragraphs of item 
+     951 0005                        C  arena   ENDS 
+     952                             C   
+     953                             C  ; 
+     954                             C  ; Current structure of the data returne
+					d by the international call 
+     955                             C  ; 
+     956                             C   
+     957                             C  internat_block STRUC 
+     958 0000  ????                  C  Date_tim_format DW      ?           ; 0
+					-USA, 1-EUR, 2-JAP 
+     959 0002  ??                    C  Currency_sym    DB      ?           ; C
+					urrency Symbol 5 bytes 
+     960 0003  ??                    C                  DB      ? 
+     961 0004  ??                    C                  DB      ? 
+     962 0005  ??                    C                  DB      ? 
+     963 0006  ??                    C                  DB      ? 
+     964 0007  ??                    C  Thous_sep       DB      ?           ; T
+					housands separator 2 bytes 
+     965 0008  ??                    C                  DB      ? 
+     966 0009  ??                    C  Decimal_sep     DB      ?           ; D
+					ecimal separator 2 bytes 
+     967 000A  ??                    C                  DB      ? 
+     968 000B  ??                    C  Date_sep        DB      ?           ; D
+					ate separator 2 bytes 
+     969 000C  ??                    C                  DB      ? 
+     970 000D  ??                    C  Time_sep        DB      ?           ; D
+					ecimal separator 2 bytes 
+     971 000E  ??                    C                  DB      ? 
+     972 000F  ??                    C  Bit_feild       DB      ?           ; B
+					it values 
+     973                             C                                      ;  
+					 Bit 0 = 0 if currency symbol first 
+     974                             C                                      ;  
+					       = 1 if currency symbol last 
+     975                             C                                      ;  
+					 Bit 1 = 0 if No space after currency s
+					ymbol 
+     976                             C                                      ;  
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-45
+Memory arena structure                                      
+
+					       = 1 if space after currency symb
+					ol 
+     977 0010  ??                    C  Currency_cents  DB      ?           ; N
+					umber of places after currency dec poin
+					t 
+     978 0011  ??                    C  Time_24         DB      ?           ; 1
+					 if 24 hour time, 0 if 12 hour time 
+     979 0012  ????                  C  Map_call        DW      ?           ; A
+					ddress of case mapping call (DWORD) 
+     980 0014  ????                  C                  DW      ?           ; T
+					HIS IS TWO WORDS SO IT CAN BE INITIALIZ
+					ED 
+     981                             C                                      ;  
+					in pieces. 
+     982 0016  ??                    C  Data_sep        DB      ?           ; D
+					ata list separator character 
+     983 0017  ??                    C                  DB      ? 
+     984 0018                        C  internat_block ENDS 
+     985                             C   
+     986                             C  ; 
+     987                             C  ; Max size of the block returned by the
+					 INTERNATIONAL call 
+     988                             C  ; 
+     989 = 0020                      C  internat_block_max      EQU     32 
+     990                             C   
+     991                             C  ; 
+     992                             C  ; CAUTION: The routines in ALLOC.ASM re
+					ly on the fact that arena_signature 
+     993                             C  ; and arena_owner_system are all equal 
+					to zero and are contained in DI.  Chang
+					e 
+     994                             C  ; them and change ALLOC.ASM. 
+     995                             C   
+     996 = 0000                      C  arena_owner_system  EQU 0              
+					 ; free block indication 
+     997                             C   
+     998 = 004D                      C  arena_signature_normal  EQU 4Dh        
+					 ; valid signature, not end of arena 
+     999 = 005A                      C  arena_signature_end     EQU 5Ah        
+					 ; valid signature, last block in arena
+					 
+    1000                             C  ;                                      
+					                                    ; 
+    1001                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+    1002                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+    1003                             C   
+    1004                             C  BREAK <Machine instruction definitions>
+					 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-46
+Machine instruction definitions                             
+
+    1005                             C   
+    1006 = 00CD                      C  mi_INT          EQU     0CDh 
+    1007 = 00EA                      C  mi_Long_JMP     EQU     0EAh 
+    1008 = 009A                      C  mi_Long_CALL    EQU     09Ah 
+    1009 = 00CB                      C  mi_Long_RET     EQU     0CBh 
+    1010                             C   
+    1011                             C  BREAK <Standard I/O assignments> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-47
+Standard I/O assignments                                    
+
+    1012                             C   
+    1013 = 0000                      C  stdin       EQU     0 
+    1014 = 0001                      C  stdout      EQU     1 
+    1015 = 0002                      C  stderr      EQU     2 
+    1016 = 0003                      C  stdaux      EQU     3 
+    1017 = 0004                      C  stdprn      EQU     4 
+    1018                             C   
+    1019                             C  BREAK <Xenix subfunction assignments> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-48
+Xenix subfunction assignments                               
+
+    1020                             C   
+    1021 = 0000                      C  open_for_read   EQU 0 
+    1022 = 0001                      C  open_for_write  EQU 1 
+    1023 = 0002                      C  open_for_both   EQU 2 
+    1024                             C   
+    1025                             C  BREAK <Xenix error codes> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-49
+Xenix error codes                                           
+
+    1026                             C   
+    1027                             C  ; 
+    1028                             C  ; XENIX calls all return error codes th
+					rough AX.  If an error occurred then 
+    1029                             C  ; the carry bit will be set and the err
+					or code is in AX.  If no error occurred
+					 
+    1030                             C  ; then the carry bit is reset and AX co
+					ntains returned info. 
+    1031                             C  ; 
+    1032                             C   
+    1033 =                           C  no_error_occurred               EQU    
+					 0                                     
+					                         ? 
+    1034                             C   
+    1035 = 0001                      C  error_invalid_function          EQU    
+					 1 
+    1036 = 0002                      C  error_file_not_found            EQU    
+					 2 
+    1037 = 0003                      C  error_path_not_found            EQU    
+					 3 
+    1038 = 0004                      C  error_too_many_open_files       EQU    
+					 4 
+    1039 = 0005                      C  error_access_denied             EQU    
+					 5 
+    1040 = 0006                      C  error_invalid_handle            EQU    
+					 6 
+    1041 = 0007                      C  error_arena_trashed             EQU    
+					 7 
+    1042 = 0008                      C  error_not_enough_memory         EQU    
+					 8 
+    1043 = 0009                      C  error_invalid_block             EQU    
+					 9 
+    1044 = 000A                      C  error_bad_environment           EQU    
+					 10 
+    1045 = 000B                      C  error_bad_format                EQU    
+					 11 
+    1046 = 000C                      C  error_invalid_access            EQU    
+					 12 
+    1047 = 000D                      C  error_invalid_data              EQU    
+					 13 
+    1048                             C  ;**** unused                    EQU    
+					 14 
+    1049 = 000F                      C  error_invalid_drive             EQU    
+					 15 
+    1050 = 0010                      C  error_current_directory         EQU    
+					 16 
+    1051 = 0011                      C  error_not_same_device           EQU    
+					 17 
+    1052 = 0012                      C  error_no_more_files             EQU    
+					 18 
+    1053                             C   
+    1054 =                           C  country_not_found               EQU    
+					 error_file_not_found 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-50
+Xenix error codes                                           
+
+    1055 =                           C  alloc_not_enough_memory         EQU    
+					 error_not_enough_memory 
+    1056 =                           C  alloc_arena_trashed             EQU    
+					 error_arena_trashed 
+    1057                             C   
+    1058 =                           C  close_invalid_handle            EQU    
+					 error_invalid_handle 
+    1059 =                           C  close_invalid_function          EQU    
+					 error_invalid_function 
+    1060                             C   
+    1061 =                           C  chdir_path_not_found            EQU    
+					 error_path_not_found 
+    1062                             C   
+    1063 =                           C  chmod_path_not_found            EQU    
+					 error_path_not_found 
+    1064 =                           C  chmod_access_denied             EQU    
+					 error_access_denied 
+    1065 =                           C  chmod_invalid_function          EQU    
+					 error_invalid_function 
+    1066                             C   
+    1067 =                           C  creat_access_denied             EQU    
+					 error_access_denied 
+    1068 =                           C  creat_path_not_found            EQU    
+					 error_path_not_found 
+    1069 =                           C  creat_too_many_open_files       EQU    
+					 error_too_many_open_files 
+    1070                             C   
+    1071 =                           C  curdir_invalid_drive            EQU    
+					 error_invalid_drive 
+    1072                             C   
+    1073 =                           C  dealloc_invalid_block           EQU    
+					 error_invalid_block 
+    1074 =                           C  dealloc_arena_trashed           EQU    
+					 error_arena_trashed 
+    1075                             C   
+    1076 =                           C  dup_invalid_handle              EQU    
+					 error_invalid_handle 
+    1077 =                           C  dup_too_many_open_files         EQU    
+					 error_too_many_open_files 
+    1078                             C   
+    1079 =                           C  dup2_invalid_handle             EQU    
+					 error_invalid_handle 
+    1080                             C   
+    1081 =                           C  exec_invalid_function           EQU    
+					 error_invalid_function 
+    1082 =                           C  exec_bad_environment            EQU    
+					 error_bad_environment 
+    1083 =                           C  exec_bad_format                 EQU    
+					 error_bad_format 
+    1084 =                           C  exec_not_enough_memory          EQU    
+					 error_not_enough_memory 
+    1085 =                           C  exec_file_not_found             EQU    
+					 error_file_not_found 
+    1086                             C   
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-51
+Xenix error codes                                           
+
+    1087 =                           C  filetimes_invalid_function      EQU    
+					 error_invalid_function 
+    1088 =                           C  filetimes_invalid_handle        EQU    
+					 error_invalid_handle 
+    1089                             C   
+    1090 =                           C  findfirst_file_not_found        EQU    
+					 error_file_not_found 
+    1091 =                           C  findfirst_no_more_files         EQU    
+					 error_no_more_files 
+    1092 =                           C  findnext_no_more_files          EQU    
+					 error_no_more_files 
+    1093                             C   
+    1094 =                           C  international_invalid_function  EQU    
+					 error_invalid_function 
+    1095                             C   
+    1096 =                           C  ioctl_invalid_handle            EQU    
+					 error_invalid_handle 
+    1097 =                           C  ioctl_invalid_function          EQU    
+					 error_invalid_function 
+    1098 =                           C  ioctl_invalid_data              EQU    
+					 error_invalid_data 
+    1099                             C   
+    1100 =                           C  lseek_invalid_handle            EQU    
+					 error_invalid_handle 
+    1101 =                           C  lseek_invalid_function          EQU    
+					 error_invalid_function 
+    1102                             C   
+    1103 =                           C  mkdir_path_not_found            EQU    
+					 error_path_not_found 
+    1104 =                           C  mkdir_access_denied             EQU    
+					 error_access_denied 
+    1105                             C   
+    1106 =                           C  open_invalid_access             EQU    
+					 error_invalid_access 
+    1107 =                           C  open_file_not_found             EQU    
+					 error_file_not_found 
+    1108 =                           C  open_access_denied              EQU    
+					 error_access_denied 
+    1109 =                           C  open_too_many_open_files        EQU    
+					 error_too_many_open_files 
+    1110                             C   
+    1111 =                           C  read_invalid_handle             EQU    
+					 error_invalid_handle 
+    1112 =                           C  read_access_denied              EQU    
+					 error_access_denied 
+    1113                             C   
+    1114 =                           C  rename_file_not_found           EQU    
+					 error_file_not_found 
+    1115 =                           C  rename_not_same_device          EQU    
+					 error_not_same_device 
+    1116 =                           C  rename_access_denied            EQU    
+					 error_access_denied 
+    1117                             C   
+    1118 =                           C  rmdir_path_not_found            EQU    
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-52
+Xenix error codes                                           
+
+					 error_path_not_found 
+    1119 =                           C  rmdir_access_denied             EQU    
+					 error_access_denied 
+    1120 =                           C  rmdir_current_directory         EQU    
+					 error_current_directory 
+    1121                             C   
+    1122 =                           C  setblock_invalid_block          EQU    
+					 error_invalid_block 
+    1123 =                           C  setblock_arena_trashed          EQU    
+					 error_arena_trashed 
+    1124 =                           C  setblock_not_enough_memory      EQU    
+					 error_not_enough_memory 
+    1125 =                           C  setblock_invalid_function       EQU    
+					 error_invalid_function 
+    1126                             C   
+    1127 =                           C  unlink_file_not_found           EQU    
+					 error_file_not_found 
+    1128 =                           C  unlink_access_denied            EQU    
+					 error_access_denied 
+    1129                             C   
+    1130 =                           C  write_invalid_handle            EQU    
+					 error_invalid_handle 
+    1131 =                           C  write_access_denied             EQU    
+					 error_access_denied 
+    1132                             C   
+    1133                             C  BREAK <system call definitions> 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-53
+system call definitions                                     
+
+    1134                             C   
+    1135 = 0000                      C  Abort                           EQU 0  
+					 ;  0      0 
+    1136 = 0001                      C  Std_Con_Input                   EQU 1  
+					 ;  1      1 
+    1137 = 0002                      C  Std_Con_Output                  EQU 2  
+					 ;  2      2 
+    1138 = 0003                      C  Std_Aux_Input                   EQU 3  
+					 ;  3      3 
+    1139 = 0004                      C  Std_Aux_Output                  EQU 4  
+					 ;  4      4 
+    1140 = 0005                      C  Std_Printer_Output              EQU 5  
+					 ;  5      5 
+    1141 = 0006                      C  Raw_Con_IO                      EQU 6  
+					 ;  6      6 
+    1142 = 0007                      C  Raw_Con_Input                   EQU 7  
+					 ;  7      7 
+    1143 = 0008                      C  Std_Con_Input_No_Echo           EQU 8  
+					 ;  8      8 
+    1144 = 0009                      C  Std_Con_String_Output           EQU 9  
+					 ;  9      9 
+    1145 = 000A                      C  Std_Con_String_Input            EQU 10 
+					 ; 10      A 
+    1146 = 000B                      C  Std_Con_Input_Status            EQU 11 
+					 ; 11      B 
+    1147 = 000C                      C  Std_Con_Input_Flush             EQU 12 
+					 ; 12      C 
+    1148 = 000D                      C  Disk_Reset                      EQU 13 
+					 ; 13      D 
+    1149 = 000E                      C  Set_Default_Drive               EQU 14 
+					 ; 14      E 
+    1150 = 000F                      C  FCB_Open                        EQU 15 
+					 ; 15      F 
+    1151 = 0010                      C  FCB_Close                       EQU 16 
+					 ; 16     10 
+    1152 = 0011                      C  Dir_Search_First                EQU 17 
+					 ; 17     11 
+    1153 = 0012                      C  Dir_Search_Next                 EQU 18 
+					 ; 18     12 
+    1154 = 0013                      C  FCB_Delete                      EQU 19 
+					 ; 19     13 
+    1155 = 0014                      C  FCB_Seq_Read                    EQU 20 
+					 ; 20     14 
+    1156 = 0015                      C  FCB_Seq_Write                   EQU 21 
+					 ; 21     15 
+    1157 = 0016                      C  FCB_Create                      EQU 22 
+					 ; 22     16 
+    1158 = 0017                      C  FCB_Rename                      EQU 23 
+					 ; 23     17 
+    1159 = 0019                      C  Get_Default_Drive               EQU 25 
+					 ; 25     19 
+    1160 = 001A                      C  Set_DMA                         EQU 26 
+					 ; 26     1A 
+    1161                             C  ;----+----+----+----+----+----+----+---
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-54
+system call definitions                                     
+
+					-+----+----+----+----+----+----+----; 
+    1162                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+    1163                             C  ;                                      
+					                                    ; 
+    1164 = 001F                      C  Get_Default_DPB                 EQU 31 
+					 ; 31     1F 
+    1165                             C  ;                                      
+					                                    ; 
+    1166                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+    1167                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+    1168 = 0021                      C  FCB_Random_Read                 EQU 33 
+					 ; 33     21 
+    1169 = 0022                      C  FCB_Random_Write                EQU 34 
+					 ; 34     22 
+    1170 = 0023                      C  Get_FCB_File_Length             EQU 35 
+					 ; 35     23 
+    1171 = 0024                      C  Get_FCB_Position                EQU 36 
+					 ; 36     24 
+    1172 = 0025                      C  Set_Interrupt_Vector            EQU 37 
+					 ; 37     25 
+    1173 = 0026                      C  Create_Process_Data_Block       EQU 38 
+					 ; 38     26 
+    1174 = 0027                      C  FCB_Random_Read_Block           EQU 39 
+					 ; 39     27 
+    1175 = 0028                      C  FCB_Random_Write_Block          EQU 40 
+					 ; 40     28 
+    1176 = 0029                      C  Parse_File_Descriptor           EQU 41 
+					 ; 41     29 
+    1177 = 002A                      C  Get_Date                        EQU 42 
+					 ; 42     2A 
+    1178 = 002B                      C  Set_Date                        EQU 43 
+					 ; 43     2B 
+    1179 = 002C                      C  Get_Time                        EQU 44 
+					 ; 44     2C 
+    1180 = 002D                      C  Set_Time                        EQU 45 
+					 ; 45     2D 
+    1181 = 002E                      C  Set_Verify_On_Write             EQU 46 
+					 ; 46     2E 
+    1182                             C  ; Extended functionality group 
+    1183 = 002F                      C  Get_DMA                         EQU 47 
+					 ; 47     2F 
+    1184 = 0030                      C  Get_Version                     EQU 48 
+					 ; 48     30 
+    1185 = 0031                      C  Keep_Process                    EQU 49 
+					 ; 49     31 
+    1186                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+    1187                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+    1188                             C  ;                                      
+					                                    ; 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-55
+system call definitions                                     
+
+    1189 = 0032                      C  Get_DPB                         EQU 50 
+					 ; 50     32 
+    1190                             C  ;                                      
+					                                    ; 
+    1191                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+    1192                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+    1193 = 0033                      C  Set_CTRL_C_Trapping             EQU 51 
+					 ; 51     33 
+    1194 = 0034                      C  Get_InDOS_Flag                  EQU 52 
+					 ; 52     34 
+    1195 = 0035                      C  Get_Interrupt_Vector            EQU 53 
+					 ; 53     35 
+    1196 = 0036                      C  Get_Drive_Freespace             EQU 54 
+					 ; 54     36 
+    1197 = 0037                      C  Char_Oper                       EQU 55 
+					 ; 55     37 
+    1198 = 0038                      C  International                   EQU 56 
+					 ; 56     38 
+    1199                             C  ;   Directory Group 
+    1200 = 0039                      C  MKDir                           EQU 57 
+					 ; 57     39 
+    1201 = 003A                      C  RMDir                           EQU 58 
+					 ; 58     3A 
+    1202 = 003B                      C  CHDir                           EQU 59 
+					 ; 59     3B 
+    1203                             C  ;   File Group 
+    1204 = 003C                      C  Creat                           EQU 60 
+					 ; 60     3C 
+    1205 = 003D                      C  Open                            EQU 61 
+					 ; 61     3D 
+    1206 = 003E                      C  Close                           EQU 62 
+					 ; 62     3E 
+    1207 = 003F                      C  Read                            EQU 63 
+					 ; 63     3F 
+    1208 = 0040                      C  Write                           EQU 64 
+					 ; 64     40 
+    1209 = 0041                      C  Unlink                          EQU 65 
+					 ; 65     41 
+    1210 = 0042                      C  LSeek                           EQU 66 
+					 ; 66     42 
+    1211 = 0043                      C  CHMod                           EQU 67 
+					 ; 67     43 
+    1212 = 0044                      C  IOCtl                           EQU 68 
+					 ; 68     44 
+    1213 = 0045                      C  XDup                            EQU 69 
+					 ; 69     45 
+    1214 = 0046                      C  XDup2                           EQU 70 
+					 ; 70     46 
+    1215 = 0047                      C  Current_Dir                     EQU 71 
+					 ; 71     47 
+    1216                             C  ;    Memory Group 
+    1217 = 0048                      C  Alloc                           EQU 72 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-56
+system call definitions                                     
+
+					 ; 72     48 
+    1218 = 0049                      C  Dealloc                         EQU 73 
+					 ; 73     49 
+    1219 = 004A                      C  Setblock                        EQU 74 
+					 ; 74     4A 
+    1220                             C  ;    Process Group 
+    1221 = 004B                      C  Exec                            EQU 75 
+					 ; 75     4B 
+    1222 = 004C                      C  Exit                            EQU 76 
+					 ; 76     4C 
+    1223 = 004D                      C  Wait                            EQU 77 
+					 ; 77     4D 
+    1224 = 004E                      C  Find_First                      EQU 78 
+					 ; 78     4E 
+    1225                             C  ;   Special Group 
+    1226 = 004F                      C  Find_Next                       EQU 79 
+					 ; 79     4F 
+    1227                             C  ; SPECIAL SYSTEM GROUP 
+    1228                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+    1229                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+    1230                             C  ;                                      
+					                                    ; 
+    1231 = 0050                      C  Set_Current_PDB                 EQU 80 
+					 ; 80     50 
+    1232 = 0051                      C  Get_Current_PDB                 EQU 81 
+					 ; 81     51 
+    1233 = 0052                      C  Get_In_Vars                     EQU 82 
+					 ; 82     52 
+    1234 = 0053                      C  SetDPB                          EQU 83 
+					 ; 83     53 
+    1235                             C  ;                                      
+					                                    ; 
+    1236                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+    1237                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+    1238 = 0054                      C  Get_Verify_On_Write             EQU 84 
+					 ; 84     54 
+    1239                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+    1240                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+    1241                             C  ;                                      
+					                                    ; 
+    1242 = 0055                      C  Dup_PDB                         EQU 85 
+					 ; 85     55 
+    1243                             C  ;                                      
+					                                    ; 
+    1244                             C  ;            C  A  V  E  A  T     P  R 
+					 O  G  R  A  M  M  E  R             ; 
+    1245                             C  ;----+----+----+----+----+----+----+---
+					-+----+----+----+----+----+----+----; 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-57
+system call definitions                                     
+
+    1246 = 0056                      C  Rename                          EQU 86 
+					 ; 86     56 
+    1247 = 0057                      C  File_Times                      EQU 87 
+					 ; 87     57 
+    1248 = 0058                      C  AllocOper                       EQU 88 
+					 ; 88     58 
+    1249                             C  ; Network extention system calls 
+    1250 = 0059                      C  GetExtendedError                EQU 89 
+					 ; 89     59 
+    1251 = 005A                      C  CreateTempFile                  EQU 90 
+					 ; 90     5A 
+    1252 = 005B                      C  CreateNewFile                   EQU 91 
+					 ; 91     5B 
+    1253 = 005C                      C  LockOper                        EQU 92 
+					 ; 92     5C Lock and Unlock 
+    1254 = 005D                      C  ServerCall                      EQU 93 
+					 ; 93     5D CommitAll, ServerDOSCall, 
+    1255                             C                                         
+					 ;           CloseByName, CloseUser, 
+    1256                             C                                         
+					 ;           CloseUserProcess, 
+    1257                             C                                         
+					 ;           GetOpenFileList 
+    1258 = 005E                      C  UserIDOper                      EQU 94 
+					 ; 94     5E Get and Set 
+    1259 = 005F                      C  AssignOper                      EQU 95 
+					 ; 95     5F On, Off, Get, Set, Cancel 
+    1260                             C   
+    1261 = 00F8                      C  Set_Oem_Handler                 EQU 248
+					 ; 248    F8 
+    1262 = 00F9                      C  OEM_C1                          EQU 249
+					 ; 249    F9 
+    1263 = 00FA                      C  OEM_C2                          EQU 250
+					 ; 250    FA 
+    1264 = 00FB                      C  OEM_C3                          EQU 251
+					 ; 251    FB 
+    1265 = 00FC                      C  OEM_C4                          EQU 252
+					 ; 252    FC 
+    1266 = 00FD                      C  OEM_C5                          EQU 253
+					 ; 253    FD 
+    1267 = 00FE                      C  OEM_C6                          EQU 254
+					 ; 254    FE 
+    1268 = 00FF                      C  OEM_C7                          EQU 255
+					 ; 255    FF 
+    1269                             C  SUBTTL 
+    1270                                 
+    1271                                 
+    1272 0000                           CODE    SEGMENT PUBLIC 
+    1273 0100                                   ORG     100H 
+    1274                                ASSUME  CS:CODE,DS:CODE,ES:CODE,SS:CODE
+					 
+    1275 0100                           START: 
+    1276                                 
+    1277 0100  B4 30                            MOV     AH,GET_VERSION 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-58
+                                                            
+
+    1278 0102  CD 21                            INT     21H 
+    1279 0104  86 E0                            XCHG    AH,AL                  
+					 ; Turn it around to AH.AL 
+    1280 0106  3D 0200                          CMP     AX,200H 
+    1281 0109  73 09                            JAE     OKDOS 
+    1282 010B  BA 0000 E                        MOV     DX,OFFSET BADVER 
+    1283 010E  B4 09                            MOV     AH,STD_CON_STRING_OUTPU
+					T 
+    1284 0110  CD 21                            INT     21H 
+    1285 0112  CD 20                            INT     20H 
+    1286 0114                           OKDOS: 
+    1287                                 
+    1288                                        IF      IBMVER 
+    1289                                        ELSE 
+    1290 0114  C6 06 01E5 R 19                  MOV     BYTE PTR MAXROW,25 
+    1291                                        ENDIF 
+    1292 0119  B4 0F                            MOV     AH,15 
+    1293 011B  CD 10                            INT     16 
+    1294 011D  88 26 01E6 R                     MOV     MAXCOL,AH 
+    1295                                        ENDIF 
+    1296                                 
+    1297 0121  BA 0000 E                        MOV     DX,OFFSET CRLFTXT      
+					 ; INITIALIZE CURSOR 
+    1298 0124  B4 09                            MOV     AH,STD_CON_STRING_OUTPU
+					T 
+    1299 0126  CD 21                            INT     21H 
+    1300                                 
+    1301 0128  33 DB                            XOR     BX,BX                  
+					 ; DUP FILE HANDLE 0 
+    1302 012A  B4 45                            MOV     AH,XDUP 
+    1303 012C  CD 21                            INT     21H 
+    1304 012E  8B E8                            MOV     BP,AX 
+    1305                                 
+    1306 0130  B4 3E                            MOV     AH,CLOSE               
+					 ; CLOSE STANDARD IN 
+    1307 0132  CD 21                            INT     21H 
+    1308                                 
+    1309 0134  BB 0002                          MOV     BX,2                   
+					 ; DUP STD ERR TO STANDARD IN 
+    1310 0137  B4 45                            MOV     AH,XDUP 
+    1311 0139  CD 21                            INT     21H 
+    1312                                 
+    1313 013B                           ALOOP: 
+    1314 013B  FC                               CLD 
+    1315 013C  BA 0000 E                        MOV     DX,OFFSET BUFFER 
+    1316 013F  B9 1000                          MOV     CX,4096 
+    1317 0142  8B DD                            MOV     BX,BP 
+    1318 0144  B4 3F                            MOV     AH,READ 
+    1319 0146  CD 21                            INT     21H 
+    1320 0148  0B C0                            OR      AX,AX 
+    1321 014A  75 02                            JNZ     SETCX 
+    1322 014C  CD 20                    DONE:   INT     20H 
+    1323 014E  8B C8                    SETCX:  MOV     CX,AX 
+    1324 0150  8B F2                            MOV     SI,DX 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-59
+                                                            
+
+    1325                                 
+    1326 0152                           TLOOP: 
+    1327 0152  AC                               LODSB 
+    1328 0153  3C 1A                            CMP     AL,1AH 
+    1329 0155  74 F5                            JZ      DONE 
+    1330 0157  3C 0D                            CMP     AL,13 
+    1331 0159  75 07                            JNZ     NOTCR 
+    1332 015B  C6 06 01E8 R 01                  MOV     BYTE PTR CURCOL,1 
+    1333 0160  EB 4C                            JMP     SHORT ISCNTRL 
+    1334                                 
+    1335 0162  3C 0A                    NOTCR:  CMP     AL,10 
+    1336 0164  75 06                            JNZ     NOTLF 
+    1337 0166  FE 06 01E7 R                     INC     BYTE PTR CURROW 
+    1338 016A  EB 42                            JMP     SHORT ISCNTRL 
+    1339                                 
+    1340 016C  3C 08                    NOTLF:  CMP     AL,8 
+    1341 016E  75 0D                            JNZ     NOTBP 
+    1342 0170  80 3E 01E8 R 01                  CMP     BYTE PTR CURCOL,1 
+    1343 0175  74 37                            JZ      ISCNTRL 
+    1344 0177  FE 0E 01E8 R                     DEC     BYTE PTR CURCOL 
+    1345 017B  EB 31                            JMP     SHORT ISCNTRL 
+    1346                                 
+    1347 017D  3C 09                    NOTBP:  CMP     AL,9 
+    1348 017F  75 12                            JNZ     NOTTB 
+    1349 0181  8A 26 01E8 R                     MOV     AH,CURCOL 
+    1350 0185  80 C4 07                         ADD     AH,7 
+    1351 0188  80 E4 F8                         AND     AH,11111000B 
+    1352 018B  FE C4                            INC     AH 
+    1353 018D  88 26 01E8 R                     MOV     CURCOL,AH 
+    1354 0191  EB 1B                            JMP     SHORT ISCNTRL 
+    1355                                 
+    1356 0193                           NOTTB: 
+    1357                                        ENDIF 
+    1358                                 
+    1359                                        IF      IBMVER 
+    1360 0193  3C 07                            CMP     AL,7                   
+					 ; ALL CHARACTERS PRINT BUT BELL 
+    1361 0195  74 17                            JZ      ISCNTRL 
+    1362                                        ENDIF 
+    1363                                 
+    1364 0197  FE 06 01E8 R                     INC     BYTE PTR CURCOL 
+    1365 019B  8A 26 01E8 R                     MOV     AH,CURCOL 
+    1366 019F  3A 26 01E6 R                     CMP     AH,MAXCOL 
+    1367 01A3  76 09                            JBE     ISCNTRL 
+    1368 01A5  FE 06 01E7 R                     INC     BYTE PTR CURROW 
+    1369 01A9  C6 06 01E8 R 01                  MOV     BYTE PTR CURCOL,1 
+    1370                                 
+    1371 01AE                           ISCNTRL: 
+    1372 01AE  8A D0                            MOV     DL,AL 
+    1373 01B0  B4 02                            MOV     AH,STD_CON_OUTPUT 
+    1374 01B2  CD 21                            INT     21H 
+    1375 01B4  8A 26 01E7 R                     MOV     AH,CURROW 
+    1376 01B8  3A 26 01E5 R                     CMP     AH,MAXROW 
+    1377 01BC  72 1E                            JB      CHARLOOP 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Page     1-60
+                                                            
+
+    1378                                 
+    1379 01BE                           ASKMORE: 
+    1380 01BE  BA 0000 E                        MOV     DX,OFFSET MORETXT 
+    1381 01C1  B4 09                            MOV     AH,STD_CON_STRING_OUTPU
+					T 
+    1382 01C3  CD 21                            INT     21H                    
+					 ; ASK MORE? 
+    1383                                 
+    1384 01C5  B4 0C                            MOV     AH,STD_CON_INPUT_FLUSH 
+					 ; WAIT FOR A KEY, NO ECHO 
+    1385 01C7  B0 01                            MOV     AL,STD_CON_INPUT 
+    1386 01C9  CD 21                            INT     21H 
+    1387                                 
+    1388 01CB  BA 0000 E                        MOV     DX,OFFSET CRLFTXT 
+    1389 01CE  B4 09                            MOV     AH,STD_CON_STRING_OUTPU
+					T 
+    1390 01D0  CD 21                            INT     21H 
+    1391                                 
+    1392 01D2  C6 06 01E8 R 01                  MOV     BYTE PTR CURCOL,1 
+    1393 01D7  C6 06 01E7 R 01                  MOV     BYTE PTR CURROW,1 
+    1394                                 
+    1395 01DC                           CHARLOOP: 
+    1396 01DC  49                               DEC     CX 
+    1397 01DD  74 03                            JZ      GOBIG 
+    1398 01DF  E9 0152 R                        JMP     TLOOP 
+    1399 01E2  E9 013B R                GOBIG:  JMP     ALOOP 
+    1400                                 
+    1401 01E5  18                       MAXROW  DB      24 
+    1402 01E6  50                       MAXCOL  DB      80 
+    1403 01E7  01                       CURROW  DB      1 
+    1404 01E8  01                       CURCOL  DB      1 
+    1405                                        EXTRN   MORETXT:BYTE,BADVER:BYT
+					E,CRLFTXT:BYTE,BUFFER:BYTE 
+    1406                                 
+    1407 01E9                           CODE    ENDS 
+    1408                                        END     START 
+
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-1
+                                                             
+
+Macros:
+
+		N a m e			Lines
+
+BREAK  . . . . . . . . . . . . .  	   2
+CONDRET  . . . . . . . . . . . .  	  19
+CONTEXT  . . . . . . . . . . . .  	   3
+DO_EXT . . . . . . . . . . . . .  	   0
+ENTRY  . . . . . . . . . . . . .  	   2
+ERROR  . . . . . . . . . . . . .  	   4
+INVOKE . . . . . . . . . . . . .  	   8
+I_AM . . . . . . . . . . . . . .  	  14
+I_NEED . . . . . . . . . . . . .  	  11
+JUMP . . . . . . . . . . . . . .  	  17
+LONG_ADDR  . . . . . . . . . . .  	   7
+MAKELAB  . . . . . . . . . . . .  	   4
+PROCEDURE  . . . . . . . . . . .  	   2
+RETC . . . . . . . . . . . . . .  	   1
+RETNC  . . . . . . . . . . . . .  	   1
+RETNZ  . . . . . . . . . . . . .  	   1
+RETURN . . . . . . . . . . . . .  	   5
+RETZ . . . . . . . . . . . . . .  	   1
+SHORT_ADDR . . . . . . . . . . .  	  12
+TRANSFER . . . . . . . . . . . .  	   8
+
+Structures and Records:
+
+                N a m e                 Width   # fields
+                                        Shift   Width   Mask    Initial
+
+ARENA  . . . . . . . . . . . . .  	0005	0003
+  ARENA_SIGNATURE  . . . . . . .  	0000
+  ARENA_OWNER  . . . . . . . . .  	0001
+  ARENA_SIZE . . . . . . . . . .  	0003
+BPBLOCK  . . . . . . . . . . . .  	000D	0008
+  BPSECSZ  . . . . . . . . . . .  	0000
+  BPCLUS . . . . . . . . . . . .  	0002
+  BPRES  . . . . . . . . . . . .  	0003
+  BPFTCNT  . . . . . . . . . . .  	0005
+  BPDRCNT  . . . . . . . . . . .  	0006
+  BPSCCNT  . . . . . . . . . . .  	0008
+  BPMEDIA  . . . . . . . . . . .  	000A
+  BPFTSEC  . . . . . . . . . . .  	000B
+BUFFINFO . . . . . . . . . . . .  	0010	0009
+  NEXTBUF  . . . . . . . . . . .  	0000
+  BUFDRV . . . . . . . . . . . .  	0004
+  BUFDIRTY . . . . . . . . . . .  	0005
+  BUFPRI . . . . . . . . . . . .  	0006
+  VISIT  . . . . . . . . . . . .  	0007
+  BUFSECNO . . . . . . . . . . .  	0008
+  BUFWRTCNT  . . . . . . . . . .  	000A
+  BUFWRTINC  . . . . . . . . . .  	000B
+  BUFDRVDP . . . . . . . . . . .  	000C
+DIR_ENTRY  . . . . . . . . . . .  	0020	0008
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-2
+                                                             
+
+  DIR_NAME . . . . . . . . . . .  	0000
+  DIR_ATTR . . . . . . . . . . .  	000B
+  DIR_PAD  . . . . . . . . . . .  	000C
+  DIR_TIME . . . . . . . . . . .  	0016
+  DIR_DATE . . . . . . . . . . .  	0018
+  DIR_FIRST  . . . . . . . . . .  	001A
+  DIR_SIZE_L . . . . . . . . . .  	001C
+  DIR_SIZE_H . . . . . . . . . .  	001E
+DPB  . . . . . . . . . . . . . .  	005E	0012
+  DPB_DRIVE  . . . . . . . . . .  	0000
+  DPB_UNIT . . . . . . . . . . .  	0001
+  DPB_SECTOR_SIZE  . . . . . . .  	0002
+  DPB_CLUSTER_MASK . . . . . . .  	0004
+  DPB_CLUSTER_SHIFT  . . . . . .  	0005
+  DPB_FIRST_FAT  . . . . . . . .  	0006
+  DPB_FAT_COUNT  . . . . . . . .  	0008
+  DPB_ROOT_ENTRIES . . . . . . .  	0009
+  DPB_FIRST_SECTOR . . . . . . .  	000B
+  DPB_MAX_CLUSTER  . . . . . . .  	000D
+  DPB_FAT_SIZE . . . . . . . . .  	000F
+  DPB_DIR_SECTOR . . . . . . . .  	0010
+  DPB_DRIVER_ADDR  . . . . . . .  	0012
+  DPB_MEDIA  . . . . . . . . . .  	0016
+  DPB_FIRST_ACCESS . . . . . . .  	0017
+  DPB_NEXT_DPB . . . . . . . . .  	0018
+  DPB_CURRENT_DIR  . . . . . . .  	001C
+  DPB_DIR_TEXT . . . . . . . . .  	001E
+EXEC0  . . . . . . . . . . . . .  	000E	0004
+  EXEC0_ENVIRON  . . . . . . . .  	0000
+  EXEC0_COM_LINE . . . . . . . .  	0002
+  EXEC0_5C_FCB . . . . . . . . .  	0006
+  EXEC0_6C_FCB . . . . . . . . .  	000A
+EXEC1  . . . . . . . . . . . . .  	0016	0008
+  EXEC1_ENVIRON  . . . . . . . .  	0000
+  EXEC1_COM_LINE . . . . . . . .  	0002
+  EXEC1_5C_FCB . . . . . . . . .  	0006
+  EXEC1_6C_FCB . . . . . . . . .  	000A
+  EXEC1_SP . . . . . . . . . . .  	000E
+  EXEC1_SS . . . . . . . . . . .  	0010
+  EXEC1_IP . . . . . . . . . . .  	0012
+  EXEC1_CS . . . . . . . . . . .  	0014
+EXEC3  . . . . . . . . . . . . .  	0004	0002
+  EXEC3_LOAD_ADDR  . . . . . . .  	0000
+  EXEC3_RELOC_FAC  . . . . . . .  	0002
+EXE_FILE . . . . . . . . . . . .  	0020	000F
+  EXE_SIGNATURE  . . . . . . . .  	0000
+  EXE_LEN_MOD_512  . . . . . . .  	0002
+  EXE_PAGES  . . . . . . . . . .  	0004
+  EXE_RLE_COUNT  . . . . . . . .  	0006
+  EXE_PAR_DIR  . . . . . . . . .  	0008
+  EXE_MIN_BSS  . . . . . . . . .  	000A
+  EXE_MAX_BSS  . . . . . . . . .  	000C
+  EXE_SS . . . . . . . . . . . .  	000E
+  EXE_SP . . . . . . . . . . . .  	0010
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-3
+                                                             
+
+  EXE_CHKSUM . . . . . . . . . .  	0012
+  EXE_IP . . . . . . . . . . . .  	0014
+  EXE_CS . . . . . . . . . . . .  	0016
+  EXE_RLE_TABLE  . . . . . . . .  	0018
+  EXE_IOV  . . . . . . . . . . .  	001A
+  EXE_SYM_TAB  . . . . . . . . .  	001C
+FIND_BUF . . . . . . . . . . . .  	002B	000C
+  FIND_BUF_SATTR . . . . . . . .  	0000
+  FIND_BUF_DRIVE . . . . . . . .  	0001
+  FIND_BUF_NAME  . . . . . . . .  	0002
+  FIND_BUF_LASTENT . . . . . . .  	000D
+  FIND_BUF_THISDPB . . . . . . .  	000F
+  FIND_BUF_DIRSTART  . . . . . .  	0013
+  FIND_BUF_ATTR  . . . . . . . .  	0015
+  FIND_BUF_TIME  . . . . . . . .  	0016
+  FIND_BUF_DATE  . . . . . . . .  	0018
+  FIND_BUF_SIZE_L  . . . . . . .  	001A
+  FIND_BUF_SIZE_H  . . . . . . .  	001C
+  FIND_BUF_PNAME . . . . . . . .  	001E
+INTERNAT_BLOCK . . . . . . . . .  	0018	0015
+  DATE_TIM_FORMAT  . . . . . . .  	0000
+  CURRENCY_SYM . . . . . . . . .  	0002
+  THOUS_SEP  . . . . . . . . . .  	0007
+  DECIMAL_SEP  . . . . . . . . .  	0009
+  DATE_SEP . . . . . . . . . . .  	000B
+  TIME_SEP . . . . . . . . . . .  	000D
+  BIT_FEILD  . . . . . . . . . .  	000F
+  CURRENCY_CENTS . . . . . . . .  	0010
+  TIME_24  . . . . . . . . . . .  	0011
+  MAP_CALL . . . . . . . . . . .  	0012
+  DATA_SEP . . . . . . . . . . .  	0016
+PROCESS_DATA_BLOCK . . . . . . .  	005B	000E
+  PDB_EXIT_CALL  . . . . . . . .  	0000
+  PDB_BLOCK_LEN  . . . . . . . .  	0002
+  PDB_CPM_CALL . . . . . . . . .  	0005
+  PDB_EXIT . . . . . . . . . . .  	000A
+  PDB_CTRL_C . . . . . . . . . .  	000E
+  PDB_FATAL_ABORT  . . . . . . .  	0012
+  PDB_PARENT_PID . . . . . . . .  	0016
+  PDB_JFN_TABLE  . . . . . . . .  	0018
+  PDB_ENVIRON  . . . . . . . . .  	002C
+  PDB_USER_STACK . . . . . . . .  	002E
+  PDB_PAD1 . . . . . . . . . . .  	0032
+  PDB_CALL_SYSTEM  . . . . . . .  	0050
+  PDB_PAD2 . . . . . . . . . . .  	0055
+SFT  . . . . . . . . . . . . . .  	0008	0003
+  SFT_LINK . . . . . . . . . . .  	0000
+  SFT_COUNT  . . . . . . . . . .  	0004
+  SFT_TABLE  . . . . . . . . . .  	0006
+SF_ENTRY . . . . . . . . . . . .  	0028	0004
+  SF_REF_COUNT . . . . . . . . .  	0000
+  SF_MODE  . . . . . . . . . . .  	0001
+  SF_ATTR  . . . . . . . . . . .  	0002
+  SF_FCB . . . . . . . . . . . .  	0003
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-4
+                                                             
+
+SYMBOL_ENTRY . . . . . . . . . .  	0106	0004
+  SYM_VALUE  . . . . . . . . . .  	0000
+  SYM_TYPE . . . . . . . . . . .  	0004
+  SYM_LEN  . . . . . . . . . . .  	0006
+  SYM_NAME . . . . . . . . . . .  	0007
+SYS_FCB  . . . . . . . . . . . .  	0025	0010
+  FCB_DRIVE  . . . . . . . . . .  	0000
+  FCB_NAME . . . . . . . . . . .  	0001
+  FCB_EXT  . . . . . . . . . . .  	0009
+  FCB_EXTENT . . . . . . . . . .  	000C
+  FCB_RECSIZ . . . . . . . . . .  	000E
+  FCB_FILSIZ . . . . . . . . . .  	0010
+  FCB_DRVBP  . . . . . . . . . .  	0012
+  FCB_FDATE  . . . . . . . . . .  	0014
+  FCB_FTIME  . . . . . . . . . .  	0016
+  FCB_DEVID  . . . . . . . . . .  	0018
+  FCB_FIRCLUS  . . . . . . . . .  	0019
+  FCB_CLUSPOS  . . . . . . . . .  	001B
+  FCB_LSTCLUS  . . . . . . . . .  	001D
+  FCB_NR . . . . . . . . . . . .  	0020
+  FCB_RR . . . . . . . . . . . .  	0021
+USER_ENVIRON . . . . . . . . . .  	0018	000C
+  USER_AX  . . . . . . . . . . .  	0000
+  USER_BX  . . . . . . . . . . .  	0002
+  USER_CX  . . . . . . . . . . .  	0004
+  USER_DX  . . . . . . . . . . .  	0006
+  USER_SI  . . . . . . . . . . .  	0008
+  USER_DI  . . . . . . . . . . .  	000A
+  USER_BP  . . . . . . . . . . .  	000C
+  USER_DS  . . . . . . . . . . .  	000E
+  USER_ES  . . . . . . . . . . .  	0010
+  USER_IP  . . . . . . . . . . .  	0012
+  USER_CS  . . . . . . . . . . .  	0014
+  USER_F . . . . . . . . . . . .  	0016
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+CODE . . . . . . . . . . . . . .  	01E9	PARA	PUBLIC	
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+ABORT  . . . . . . . . . . . . .  	Number	0000	
+ADDR_INT_ABORT . . . . . . . . .  	Number	0080	
+ADDR_INT_COMMAND . . . . . . . .  	Number	0084	
+ADDR_INT_CTRL_C  . . . . . . . .  	Number	008C	
+ADDR_INT_DISK_READ . . . . . . .  	Number	0094	
+ADDR_INT_DISK_WRITE  . . . . . .  	Number	0098	
+ADDR_INT_FASTCON . . . . . . . .  	Number	00A4	
+ADDR_INT_FATAL_ABORT . . . . . .  	Number	0090	
+ADDR_INT_KEEP_PROCESS  . . . . .  	Number	009C	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-5
+                                                             
+
+ADDR_INT_SPOOLER . . . . . . . .  	Number	00A0	
+ADDR_INT_TERMINATE . . . . . . .  	Number	0088	
+ALLOC  . . . . . . . . . . . . .  	Number	0048	
+ALLOCOPER  . . . . . . . . . . .  	Number	0058	
+ALLOC_ARENA_TRASHED  . . . . . .  	Alias	 ERROR_ARENA_TRASHED		
+ALLOC_NOT_ENOUGH_MEMORY  . . . .  	Alias	 ERROR_NOT_ENOUGH_MEMORY		
+ALOOP  . . . . . . . . . . . . .  	L NEAR	013B	CODE
+ALTVECT  . . . . . . . . . . . .  	Number	0000	
+ARENA_OWNER_SYSTEM . . . . . . .  	Number	0000	
+ARENA_SIGNATURE_END  . . . . . .  	Number	005A	
+ARENA_SIGNATURE_NORMAL . . . . .  	Number	004D	
+ASKMORE  . . . . . . . . . . . .  	L NEAR	01BE	CODE
+ASSIGNOPER . . . . . . . . . . .  	Number	005F	
+ATTR_ALL . . . . . . . . . . . .  	Number	0016	
+ATTR_ARCHIVE . . . . . . . . . .  	Number	0020	
+ATTR_CHANGEABLE  . . . . . . . .  	Number	0027	
+ATTR_DIRECTORY . . . . . . . . .  	Number	0010	
+ATTR_HIDDEN  . . . . . . . . . .  	Number	0002	
+ATTR_IGNORE  . . . . . . . . . .  	Number	0021	
+ATTR_READ_ONLY . . . . . . . . .  	Number	0001	
+ATTR_SYSTEM  . . . . . . . . . .  	Number	0004	
+ATTR_VOLUME_ID . . . . . . . . .  	Number	0008	
+
+BADVER . . . . . . . . . . . . .  	V BYTE 	0000	CODE	External
+BUFFER . . . . . . . . . . . . .  	V BYTE 	0000	CODE	External
+BUFINSIZ . . . . . . . . . . . .  	Number	0010	
+
+CHARLOOP . . . . . . . . . . . .  	L NEAR	01DC	CODE
+CHAR_OPER  . . . . . . . . . . .  	Number	0037	
+CHDIR  . . . . . . . . . . . . .  	Number	003B	
+CHDIR_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+CHMOD  . . . . . . . . . . . . .  	Number	0043	
+CHMOD_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+CHMOD_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+CHMOD_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+CLOSE  . . . . . . . . . . . . .  	Number	003E	
+CLOSE_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+CLOSE_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+COUNTRY_NOT_FOUND  . . . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+CREAT  . . . . . . . . . . . . .  	Number	003C	
+CREATENEWFILE  . . . . . . . . .  	Number	005B	
+CREATETEMPFILE . . . . . . . . .  	Number	005A	
+CREATE_PROCESS_DATA_BLOCK  . . .  	Number	0026	
+CREAT_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+CREAT_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+CREAT_TOO_MANY_OPEN_FILES  . . .  	Alias	 ERROR_TOO_MANY_OPEN_FILES		
+CRLFTXT  . . . . . . . . . . . .  	V BYTE 	0000	CODE	External
+CURCOL . . . . . . . . . . . . .  	L BYTE 	01E8	CODE
+CURDIR_INVALID_DRIVE . . . . . .  	Alias	 ERROR_INVALID_DRIVE		
+CURRENT_DIR  . . . . . . . . . .  	Number	0047	
+CURROW . . . . . . . . . . . . .  	L BYTE 	01E7	CODE
+C_BS . . . . . . . . . . . . . .  	Number	0008	
+C_CR . . . . . . . . . . . . . .  	Number	000D	
+C_DEL  . . . . . . . . . . . . .  	Number	007F	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-6
+                                                             
+
+C_ETB  . . . . . . . . . . . . .  	Number	0017	
+C_ETX  . . . . . . . . . . . . .  	Number	0003	
+C_HT . . . . . . . . . . . . . .  	Number	0009	
+C_LF . . . . . . . . . . . . . .  	Number	000A	
+C_NAK  . . . . . . . . . . . . .  	Number	0015	
+
+DEALLOC  . . . . . . . . . . . .  	Number	0049	
+DEALLOC_ARENA_TRASHED  . . . . .  	Alias	 ERROR_ARENA_TRASHED		
+DEALLOC_INVALID_BLOCK  . . . . .  	Alias	 ERROR_INVALID_BLOCK		
+DEVID_BLOCK_DEV  . . . . . . . .  	Number	001F	
+DEVID_DEVICE . . . . . . . . . .  	Number	0080	
+DEVID_DEVICE_CLOCK . . . . . . .  	Number	0008	
+DEVID_DEVICE_CON_IN  . . . . . .  	Number	0001	
+DEVID_DEVICE_CON_OUT . . . . . .  	Number	0002	
+DEVID_DEVICE_EOF . . . . . . . .  	Number	0040	
+DEVID_DEVICE_NULL  . . . . . . .  	Number	0004	
+DEVID_DEVICE_RAW . . . . . . . .  	Number	0020	
+DEVID_DEVICE_SPECIAL . . . . . .  	Number	0010	
+DEVID_EOF  . . . . . . . . . . .  	Number	0040	
+DEVID_FILE_CLEAN . . . . . . . .  	Number	0040	
+DEVID_FILE_MASK_DRIVE  . . . . .  	Number	003F	
+DEVID_ISCIN  . . . . . . . . . .  	Number	0001	
+DEVID_ISCLK  . . . . . . . . . .  	Number	0008	
+DEVID_ISCOT  . . . . . . . . . .  	Number	0002	
+DEVID_ISDEV  . . . . . . . . . .  	Number	0080	
+DEVID_ISNUL  . . . . . . . . . .  	Number	0004	
+DEVID_RAW  . . . . . . . . . . .  	Number	0020	
+DEVID_SPECIAL  . . . . . . . . .  	Number	0010	
+DIRPRI . . . . . . . . . . . . .  	Number	000F	
+DIRSTRLEN  . . . . . . . . . . .  	Number	0040	
+DIR_SEARCH_FIRST . . . . . . . .  	Number	0011	
+DIR_SEARCH_NEXT  . . . . . . . .  	Number	0012	
+DISK_RESET . . . . . . . . . . .  	Number	000D	
+DONE . . . . . . . . . . . . . .  	L NEAR	014C	CODE
+DOS_MAJOR_VERSION  . . . . . . .  	Number	0002	
+DOS_MINOR_VERSION  . . . . . . .  	Number	000B	
+DPBSIZ . . . . . . . . . . . . .  	Number	005E	
+DSKSIZ . . . . . . . . . . . . .  	Number	000D	
+DUP2_INVALID_HANDLE  . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+DUP_INVALID_HANDLE . . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+DUP_PDB  . . . . . . . . . . . .  	Number	0055	
+DUP_TOO_MANY_OPEN_FILES  . . . .  	Alias	 ERROR_TOO_MANY_OPEN_FILES		
+
+ENTRYPOINT . . . . . . . . . . .  	Number	00C0	
+ERROR_ACCESS_DENIED  . . . . . .  	Number	0005	
+ERROR_ARENA_TRASHED  . . . . . .  	Number	0007	
+ERROR_BAD_ENVIRONMENT  . . . . .  	Number	000A	
+ERROR_BAD_FORMAT . . . . . . . .  	Number	000B	
+ERROR_CURRENT_DIRECTORY  . . . .  	Number	0010	
+ERROR_FILE_NOT_FOUND . . . . . .  	Number	0002	
+ERROR_INVALID_ACCESS . . . . . .  	Number	000C	
+ERROR_INVALID_BLOCK  . . . . . .  	Number	0009	
+ERROR_INVALID_DATA . . . . . . .  	Number	000D	
+ERROR_INVALID_DRIVE  . . . . . .  	Number	000F	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-7
+                                                             
+
+ERROR_INVALID_FUNCTION . . . . .  	Number	0001	
+ERROR_INVALID_HANDLE . . . . . .  	Number	0006	
+ERROR_NOT_ENOUGH_MEMORY  . . . .  	Number	0008	
+ERROR_NOT_SAME_DEVICE  . . . . .  	Number	0011	
+ERROR_NO_MORE_FILES  . . . . . .  	Number	0012	
+ERROR_PATH_NOT_FOUND . . . . . .  	Number	0003	
+ERROR_TOO_MANY_OPEN_FILES  . . .  	Number	0004	
+EXEC . . . . . . . . . . . . . .  	Number	004B	
+EXEC_BAD_ENVIRONMENT . . . . . .  	Alias	 ERROR_BAD_ENVIRONMENT		
+EXEC_BAD_FORMAT  . . . . . . . .  	Alias	 ERROR_BAD_FORMAT		
+EXEC_FILE_NOT_FOUND  . . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+EXEC_FUNC_NO_EXECUTE . . . . . .  	Number	0001	
+EXEC_FUNC_OVERLAY  . . . . . . .  	Number	0002	
+EXEC_INVALID_FUNCTION  . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+EXEC_NOT_ENOUGH_MEMORY . . . . .  	Alias	 ERROR_NOT_ENOUGH_MEMORY		
+EXE_VALID_OLD_SIGNATURE  . . . .  	Number	4D5A	
+EXE_VALID_SIGNATURE  . . . . . .  	Number	5A4D	
+EXIT . . . . . . . . . . . . . .  	Number	004C	
+EXIT_ABORT . . . . . . . . . . .  	Number	0000	
+EXIT_CTRL_C  . . . . . . . . . .  	Number	0001	
+EXIT_HARD_ERROR  . . . . . . . .  	Number	0002	
+EXIT_KEEP_PROCESS  . . . . . . .  	Number	0003	
+EXIT_TERMINATE . . . . . . . . .  	Number	0000	
+
+FALSE  . . . . . . . . . . . . .  	Number	0000	
+FATPRI . . . . . . . . . . . . .  	Number	001E	
+FCB_CLOSE  . . . . . . . . . . .  	Number	0010	
+FCB_CREATE . . . . . . . . . . .  	Number	0016	
+FCB_DELETE . . . . . . . . . . .  	Number	0013	
+FCB_OPEN . . . . . . . . . . . .  	Number	000F	
+FCB_RANDOM_READ  . . . . . . . .  	Number	0021	
+FCB_RANDOM_READ_BLOCK  . . . . .  	Number	0027	
+FCB_RANDOM_WRITE . . . . . . . .  	Number	0022	
+FCB_RANDOM_WRITE_BLOCK . . . . .  	Number	0028	
+FCB_RENAME . . . . . . . . . . .  	Number	0017	
+FCB_SEQ_READ . . . . . . . . . .  	Number	0014	
+FCB_SEQ_WRITE  . . . . . . . . .  	Number	0015	
+FILDIRENT  . . . . . . . . . . .  	Number	0010	
+FILETIMES_INVALID_FUNCTION . . .  	Alias	 ERROR_INVALID_FUNCTION		
+FILETIMES_INVALID_HANDLE . . . .  	Alias	 ERROR_INVALID_HANDLE		
+FILE_TIMES . . . . . . . . . . .  	Number	0057	
+FILPERPROC . . . . . . . . . . .  	Number	0014	
+FINDFIRST_FILE_NOT_FOUND . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+FINDFIRST_NO_MORE_FILES  . . . .  	Alias	 ERROR_NO_MORE_FILES		
+FINDNEXT_NO_MORE_FILES . . . . .  	Alias	 ERROR_NO_MORE_FILES		
+FIND_FIRST . . . . . . . . . . .  	Number	004E	
+FIND_NEXT  . . . . . . . . . . .  	Number	004F	
+FREEPRI  . . . . . . . . . . . .  	Number	0000	
+
+GETEXTENDEDERROR . . . . . . . .  	Number	0059	
+GET_CURRENT_PDB  . . . . . . . .  	Number	0051	
+GET_DATE . . . . . . . . . . . .  	Number	002A	
+GET_DEFAULT_DPB  . . . . . . . .  	Number	001F	
+GET_DEFAULT_DRIVE  . . . . . . .  	Number	0019	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-8
+                                                             
+
+GET_DMA  . . . . . . . . . . . .  	Number	002F	
+GET_DPB  . . . . . . . . . . . .  	Number	0032	
+GET_DRIVE_FREESPACE  . . . . . .  	Number	0036	
+GET_FCB_FILE_LENGTH  . . . . . .  	Number	0023	
+GET_FCB_POSITION . . . . . . . .  	Number	0024	
+GET_INDOS_FLAG . . . . . . . . .  	Number	0034	
+GET_INTERRUPT_VECTOR . . . . . .  	Number	0035	
+GET_IN_VARS  . . . . . . . . . .  	Number	0052	
+GET_TIME . . . . . . . . . . . .  	Number	002C	
+GET_VERIFY_ON_WRITE  . . . . . .  	Number	0054	
+GET_VERSION  . . . . . . . . . .  	Number	0030	
+GOBIG  . . . . . . . . . . . . .  	L NEAR	01E2	CODE
+
+IBMVER . . . . . . . . . . . . .  	Alias	 TRUE		
+INTBASE  . . . . . . . . . . . .  	Number	0080	
+INTERNATIONAL  . . . . . . . . .  	Number	0038	
+INTERNATIONAL_INVALID_FUNCTION .  	Alias	 ERROR_INVALID_FUNCTION		
+INTERNAT_BLOCK_MAX . . . . . . .  	Number	0020	
+INTTAB . . . . . . . . . . . . .  	Number	0020	
+INT_ABORT  . . . . . . . . . . .  	Alias	 INTTAB		
+INT_COMMAND  . . . . . . . . . .  	Number	0021	
+INT_CTRL_C . . . . . . . . . . .  	Number	0023	
+INT_DISK_READ  . . . . . . . . .  	Number	0025	
+INT_DISK_WRITE . . . . . . . . .  	Number	0026	
+INT_FASTCON  . . . . . . . . . .  	Number	0029	
+INT_FATAL_ABORT  . . . . . . . .  	Number	0024	
+INT_KEEP_PROCESS . . . . . . . .  	Number	0027	
+INT_SPOOLER  . . . . . . . . . .  	Number	0028	
+INT_TERMINATE  . . . . . . . . .  	Number	0022	
+IOCTL  . . . . . . . . . . . . .  	Number	0044	
+IOCTL_INVALID_DATA . . . . . . .  	Alias	 ERROR_INVALID_DATA		
+IOCTL_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+IOCTL_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+ISCNTRL  . . . . . . . . . . . .  	L NEAR	01AE	CODE
+
+KANJI  . . . . . . . . . . . . .  	Alias	 FALSE		
+KEEP_PROCESS . . . . . . . . . .  	Number	0031	
+
+LBRPRI . . . . . . . . . . . . .  	Number	0002	
+LBWPRI . . . . . . . . . . . . .  	Number	0004	
+LOCKOPER . . . . . . . . . . . .  	Number	005C	
+LSEEK  . . . . . . . . . . . . .  	Number	0042	
+LSEEK_INVALID_FUNCTION . . . . .  	Alias	 ERROR_INVALID_FUNCTION		
+LSEEK_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+
+MAXCOL . . . . . . . . . . . . .  	L BYTE 	01E6	CODE
+MAXROW . . . . . . . . . . . . .  	L BYTE 	01E5	CODE
+MI_INT . . . . . . . . . . . . .  	Number	00CD	
+MI_LONG_CALL . . . . . . . . . .  	Number	009A	
+MI_LONG_JMP  . . . . . . . . . .  	Number	00EA	
+MI_LONG_RET  . . . . . . . . . .  	Number	00CB	
+MKDIR  . . . . . . . . . . . . .  	Number	0039	
+MKDIR_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+MKDIR_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-9
+                                                             
+
+MORETXT  . . . . . . . . . . . .  	V BYTE 	0000	CODE	External
+MSVER  . . . . . . . . . . . . .  	Alias	 FALSE		
+
+NOTBP  . . . . . . . . . . . . .  	L NEAR	017D	CODE
+NOTCR  . . . . . . . . . . . . .  	L NEAR	0162	CODE
+NOTLF  . . . . . . . . . . . . .  	L NEAR	016C	CODE
+NOTTB  . . . . . . . . . . . . .  	L NEAR	0193	CODE
+NO_ERROR_OCCURRED  . . . . . . .  	Text  0                                                              ?		
+
+OEM_C1 . . . . . . . . . . . . .  	Number	00F9	
+OEM_C2 . . . . . . . . . . . . .  	Number	00FA	
+OEM_C3 . . . . . . . . . . . . .  	Number	00FB	
+OEM_C4 . . . . . . . . . . . . .  	Number	00FC	
+OEM_C5 . . . . . . . . . . . . .  	Number	00FD	
+OEM_C6 . . . . . . . . . . . . .  	Number	00FE	
+OEM_C7 . . . . . . . . . . . . .  	Number	00FF	
+OKDOS  . . . . . . . . . . . . .  	L NEAR	0114	CODE
+OPEN . . . . . . . . . . . . . .  	Number	003D	
+OPEN_ACCESS_DENIED . . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+OPEN_FILE_NOT_FOUND  . . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+OPEN_FOR_BOTH  . . . . . . . . .  	Number	0002	
+OPEN_FOR_READ  . . . . . . . . .  	Number	0000	
+OPEN_FOR_WRITE . . . . . . . . .  	Number	0001	
+OPEN_INVALID_ACCESS  . . . . . .  	Alias	 ERROR_INVALID_ACCESS		
+OPEN_TOO_MANY_OPEN_FILES . . . .  	Alias	 ERROR_TOO_MANY_OPEN_FILES		
+
+PARSE_FILE_DESCRIPTOR  . . . . .  	Number	0029	
+
+RAW_CON_INPUT  . . . . . . . . .  	Number	0007	
+RAW_CON_IO . . . . . . . . . . .  	Number	0006	
+READ . . . . . . . . . . . . . .  	Number	003F	
+READ_ACCESS_DENIED . . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+READ_INVALID_HANDLE  . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+RENAME . . . . . . . . . . . . .  	Number	0056	
+RENAME_ACCESS_DENIED . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+RENAME_FILE_NOT_FOUND  . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+RENAME_NOT_SAME_DEVICE . . . . .  	Alias	 ERROR_NOT_SAME_DEVICE		
+RMDIR  . . . . . . . . . . . . .  	Number	003A	
+RMDIR_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+RMDIR_CURRENT_DIRECTORY  . . . .  	Alias	 ERROR_CURRENT_DIRECTORY		
+RMDIR_PATH_NOT_FOUND . . . . . .  	Alias	 ERROR_PATH_NOT_FOUND		
+RPRI . . . . . . . . . . . . . .  	Number	0006	
+
+SERVERCALL . . . . . . . . . . .  	Number	005D	
+SETBLOCK . . . . . . . . . . . .  	Number	004A	
+SETBLOCK_ARENA_TRASHED . . . . .  	Alias	 ERROR_ARENA_TRASHED		
+SETBLOCK_INVALID_BLOCK . . . . .  	Alias	 ERROR_INVALID_BLOCK		
+SETBLOCK_INVALID_FUNCTION  . . .  	Alias	 ERROR_INVALID_FUNCTION		
+SETBLOCK_NOT_ENOUGH_MEMORY . . .  	Alias	 ERROR_NOT_ENOUGH_MEMORY		
+SETCX  . . . . . . . . . . . . .  	L NEAR	014E	CODE
+SETDPB . . . . . . . . . . . . .  	Number	0053	
+SET_CTRL_C_TRAPPING  . . . . . .  	Number	0033	
+SET_CURRENT_PDB  . . . . . . . .  	Number	0050	
+SET_DATE . . . . . . . . . . . .  	Number	002B	
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:18
+
+MORE MS-DOS Paginate Filter                                 Symbols-10
+                                                             
+
+SET_DEFAULT_DRIVE  . . . . . . .  	Number	000E	
+SET_DMA  . . . . . . . . . . . .  	Number	001A	
+SET_INTERRUPT_VECTOR . . . . . .  	Number	0025	
+SET_OEM_HANDLER  . . . . . . . .  	Number	00F8	
+SET_TIME . . . . . . . . . . . .  	Number	002D	
+SET_VERIFY_ON_WRITE  . . . . . .  	Number	002E	
+SF_DEFAULT_NUMBER  . . . . . . .  	Number	0005	
+START  . . . . . . . . . . . . .  	L NEAR	0100	CODE
+STDAUX . . . . . . . . . . . . .  	Number	0003	
+STDERR . . . . . . . . . . . . .  	Number	0002	
+STDIN  . . . . . . . . . . . . .  	Number	0000	
+STDOUT . . . . . . . . . . . . .  	Number	0001	
+STDPRN . . . . . . . . . . . . .  	Number	0004	
+STD_AUX_INPUT  . . . . . . . . .  	Number	0003	
+STD_AUX_OUTPUT . . . . . . . . .  	Number	0004	
+STD_CON_INPUT  . . . . . . . . .  	Number	0001	
+STD_CON_INPUT_FLUSH  . . . . . .  	Number	000C	
+STD_CON_INPUT_NO_ECHO  . . . . .  	Number	0008	
+STD_CON_INPUT_STATUS . . . . . .  	Number	000B	
+STD_CON_OUTPUT . . . . . . . . .  	Number	0002	
+STD_CON_STRING_INPUT . . . . . .  	Number	000A	
+STD_CON_STRING_OUTPUT  . . . . .  	Number	0009	
+STD_PRINTER_OUTPUT . . . . . . .  	Number	0005	
+
+TLOOP  . . . . . . . . . . . . .  	L NEAR	0152	CODE
+TRUE . . . . . . . . . . . . . .  	Number	FFFF	
+
+UNLINK . . . . . . . . . . . . .  	Number	0041	
+UNLINK_ACCESS_DENIED . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+UNLINK_FILE_NOT_FOUND  . . . . .  	Alias	 ERROR_FILE_NOT_FOUND		
+USERIDOPER . . . . . . . . . . .  	Number	005E	
+
+WAIT . . . . . . . . . . . . . .  	Number	004D	
+WPRI . . . . . . . . . . . . . .  	Number	0008	
+WRITE  . . . . . . . . . . . . .  	Number	0040	
+WRITE_ACCESS_DENIED  . . . . . .  	Alias	 ERROR_ACCESS_DENIED		
+WRITE_INVALID_HANDLE . . . . . .  	Alias	 ERROR_INVALID_HANDLE		
+
+XDUP . . . . . . . . . . . . . .  	Number	0045	
+XDUP2  . . . . . . . . . . . . .  	Number	0046	
+
+
+   1389 Source  Lines
+   1451 Total   Lines
+    508 Symbols
+
+  23422 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

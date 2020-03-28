@@ -1,0 +1,141 @@
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 16:37:59
+
+FIND Messages                                               Page     1-1
+                                                            
+
+       1                                      title   FIND Messages 
+       2                                 
+       3                                 
+       4 = 000D                         CR      equ     0dh                    
+					 ;A Carriage Return 
+       5 = 000A                         LF      equ     0ah                    
+					 ;A Line Feed 
+       6                                 
+       7 0000                           code    segment public 
+       8                                 
+       9                                        PUBLIC  bad_vers,crlf,errmsg1,e
+					rrlen1,errmsg2,errlen2 
+      10                                        PUBLIC  errmsg3_pre,errlen3_pre
+					,errmsg4_pre,errlen4_pre 
+      11                                        PUBLIC  errmsg3_post,errlen3_po
+					st,errmsg4_post,errlen4_post 
+      12                                        PUBLIC  errmsg5,errlen5,errmsg5
+					_opt 
+      13                                        PUBLIC  heading,heading_len 
+      14                                 
+      15 0000  49 6E 63 6F 72 72 65     bad_vers db     "Incorrect DOS version$
+					" 
+      16       63 74 20 44 4F 53 20     
+      17       76 65 72 73 69 6F 6E     
+      18       24                       
+      19 0016  0D 0A                    crlf     db      CR,LF 
+      20                                 
+      21 0018  46 49 4E 44 3A 20 49     errmsg1 db      "FIND: Invalid number o
+					f parameters",CR,LF 
+      22       6E 76 61 6C 69 64 20     
+      23       6E 75 6D 62 65 72 20     
+      24       6F 66 20 70 61 72 61     
+      25       6D 65 74 65 72 73 0D     
+      26       0A                       
+      27 003C  24                       errlen1 db      $ - errmsg1 
+      28                                 
+      29 003D  46 49 4E 44 3A 20 53     errmsg2 db      "FIND: Syntax error",CR
+					,LF 
+      30       79 6E 74 61 78 20 65     
+      31       72 72 6F 72 0D 0A        
+      32 0051  14                       errlen2 db      $ - errmsg2 
+      33                                 
+      34                                ;"errmsg3_pre<name of file>errmsg3_post
+					" 
+      35 0052  46 49 4E 44 3A 20 46     errmsg3_pre     db      "FIND: File not
+					 found " 
+      36       69 6C 65 20 6E 6F 74     
+      37       20 66 6F 75 6E 64 20     
+      38                                
+      39 0067  15                       errlen3_pre     db      $ - errmsg3_pre
+					 
+      40 0068  0D 0A                    errmsg3_post    db      CR,LF 
+      41 006A  02                       errlen3_post    db      $ - errmsg3_pos
+					t 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 16:37:59
+
+FIND Messages                                               Page     1-2
+                                                            
+
+      42                                 
+      43                                ;"errmsg4_pre<name of file>errmsg4_post
+					" 
+      44 006B  46 49 4E 44 3A 20 52     errmsg4_pre     db      "FIND: Read err
+					or in " 
+      45       65 61 64 20 65 72 72     
+      46       6F 72 20 69 6E 20        
+      47 007F  14                       errlen4_pre     db      $ - errmsg4_pre
+					 
+      48 0080  0D 0A                    errmsg4_post    db      CR,LF 
+      49 0082  02                       errlen4_post    db      $ - errmsg4_pos
+					t 
+      50                                 
+      51 0083  46 49 4E 44 3A 20 49     errmsg5         db      "FIND: Invalid 
+					Parameter " 
+      52       6E 76 61 6C 69 64 20     
+      53       50 61 72 61 6D 65 74     
+      54       65 72 20                 
+      55 009B  ??                       errmsg5_opt     db      ? 
+      56 009C  19                       errlen5         db      $ - errmsg5 
+      57                                 
+      58 009D  0D 0A 2D 2D 2D 2D 2D     heading db      CR,LF,"---------- " 
+      59       2D 2D 2D 2D 2D 20        
+      60 00AA  0D                       heading_len db  $ - heading 
+      61                                 
+      62 00AB                           code    ends 
+      63                                        end 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 16:37:59
+
+FIND Messages                                               Symbols-1
+                                                             
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+CODE . . . . . . . . . . . . . .  	00AB	PARA	PUBLIC	
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+BAD_VERS . . . . . . . . . . . .  	L BYTE 	0000	CODE	Global
+
+CR . . . . . . . . . . . . . . .  	Number	000D	
+CRLF . . . . . . . . . . . . . .  	L BYTE 	0016	CODE	Global
+
+ERRLEN1  . . . . . . . . . . . .  	L BYTE 	003C	CODE	Global
+ERRLEN2  . . . . . . . . . . . .  	L BYTE 	0051	CODE	Global
+ERRLEN3_POST . . . . . . . . . .  	L BYTE 	006A	CODE	Global
+ERRLEN3_PRE  . . . . . . . . . .  	L BYTE 	0067	CODE	Global
+ERRLEN4_POST . . . . . . . . . .  	L BYTE 	0082	CODE	Global
+ERRLEN4_PRE  . . . . . . . . . .  	L BYTE 	007F	CODE	Global
+ERRLEN5  . . . . . . . . . . . .  	L BYTE 	009C	CODE	Global
+ERRMSG1  . . . . . . . . . . . .  	L BYTE 	0018	CODE	Global
+ERRMSG2  . . . . . . . . . . . .  	L BYTE 	003D	CODE	Global
+ERRMSG3_POST . . . . . . . . . .  	L BYTE 	0068	CODE	Global
+ERRMSG3_PRE  . . . . . . . . . .  	L BYTE 	0052	CODE	Global
+ERRMSG4_POST . . . . . . . . . .  	L BYTE 	0080	CODE	Global
+ERRMSG4_PRE  . . . . . . . . . .  	L BYTE 	006B	CODE	Global
+ERRMSG5  . . . . . . . . . . . .  	L BYTE 	0083	CODE	Global
+ERRMSG5_OPT  . . . . . . . . . .  	L BYTE 	009B	CODE	Global
+
+HEADING  . . . . . . . . . . . .  	L BYTE 	009D	CODE	Global
+HEADING_LEN  . . . . . . . . . .  	L BYTE 	00AA	CODE	Global
+
+LF . . . . . . . . . . . . . . .  	Number	000A	
+
+
+     44 Source  Lines
+     44 Total   Lines
+     43 Symbols
+
+  48934 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

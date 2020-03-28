@@ -1,0 +1,60 @@
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:22
+
+MORE Messages                                               Page     1-1
+                                                            
+
+       1                                TITLE   MORE Messages 
+       2                                 
+       3 0000                           CODE    SEGMENT PUBLIC 
+       4                                        PUBLIC  MORETXT,BADVER,CRLFTXT,
+					BUFFER 
+       5                                 
+       6 0000  0D 2D 2D 20 4D 6F 72     MORETXT DB      13,"-- More --$" 
+       7       65 20 2D 2D 24           
+       8 000C  4D 4F 52 45 3A 20 49     BADVER  DB      "MORE: Incorrect DOS ve
+					rsion" 
+       9       6E 63 6F 72 72 65 63     
+      10       74 20 44 4F 53 20 76     
+      11       65 72 73 69 6F 6E        
+      12 0027  0D 0A 24                 CRLFTXT DB      13,10,"$" 
+      13                                ; 
+      14                                ; THIS VARIABLE MUST BE DEFINED LAST! 
+      15                                ; 
+      16 002A  1002[                    BUFFER  DB      4098 DUP (?) 
+      17            ??                  
+      18                         ]      
+      19                                
+      20                                 
+      21 102C                           CODE    ENDS 
+      22                                        END 
+Microsoft (R) Macro Assembler  Version 4.00                 3/27/20 17:03:22
+
+MORE Messages                                               Symbols-1
+                                                             
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+CODE . . . . . . . . . . . . . .  	102C	PARA	PUBLIC	
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+BADVER . . . . . . . . . . . . .  	L BYTE 	000C	CODE	Global
+BUFFER . . . . . . . . . . . . .  	L BYTE 	002A	CODE	Global	Length = 1002
+
+CRLFTXT  . . . . . . . . . . . .  	L BYTE 	0027	CODE	Global
+
+MORETXT  . . . . . . . . . . . .  	L BYTE 	0000	CODE	Global
+
+
+     15 Source  Lines
+     15 Total   Lines
+     26 Symbols
+
+  49936 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors
