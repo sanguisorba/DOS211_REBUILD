@@ -1,7 +1,7 @@
 # DOS211_REBUILD
 <img width="320" height="200" align="center" style="float: center; margin: 0 10px 0 0;" alt="MS-DOS SCREENSHOT" src="https://github.com/sanguisorba/DOS211_REBUILD/blob/master/screenshot.png"> 
 
-
+画像:ビルド例 (NEC PC-9800 Series)
 
 # LICENSE
 殆ど全てのソースコードはマイクロソフトがMITライセンスで配布したものです。
