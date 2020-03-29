@@ -1,5 +1,7 @@
 # DOS211_REBUILD
-Rebuild MS-DOS 2.11
+<img width="320" height="200" align="center" style="float: center; margin: 0 10px 0 0;" alt="MS-DOS SCREENSHOT" src="https://github.com/sanguisorba/DOS211_REBUILD/blob/master/screenshot.png"> 
+
+
 
 # LICENSE
 殆ど全てのソースコードはマイクロソフトがMITライセンスで配布したものです。
@@ -66,3 +68,5 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 
 
 # 本レポジトリではBOOT.ASM, BIOS.ASM, OEMFOR.ASMを提供しません。
+
+ちなみにPC-9800シリーズで動作させるためにはMSDOS.SYSのソースコード系も生では使えないので改造する必要があります。
