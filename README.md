@@ -26,7 +26,9 @@ MS-DOS 2.11のソースコードをできる範囲でリビルドしました。
 # 開発環境
 * PC-98エミュレータ Neko Project 21/W
 * PC-9800シリーズ用 MS-DOS 2.11
-* N5200/05用 MS-DOS 2.0より、MASM 1.20 (CREF, LIB, LINK含む)
+* N5200/05用 MS-DOS 2.0より、MASM 1.20
+* LINK.EXE (N5200/05 MS-DOS 2.0付属のものと、Distribution Disks - DISK1付属のものはバイナリ一致でした)
+
 # MS-DOSのソースコードの中身
 
 https://github.com/microsoft/MS-DOS
@@ -72,6 +74,14 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 * BOOT.COMの内容をブートセクタに書き込みます。フロッピーディスクイメージをバイナリエディタで上書きすると良いです。
 
 * BINフォルダ内の他のものをフロッピーディスクへ書き込めば完成です。
+
+# とりあえず動かしてみたい人向け
+
+* MS-DOS 2.xでフォーマットされた空のディスクイメージとIO.SYSを用意します
+
+* IO.SYS , MSDOS.SYS , COMMAND.COM , その他のファイルの順でディスクにファイルを書き込みます
+
+* 完成
 
 
 # 本レポジトリではBOOT.ASM, BIOS.ASM, OEMFOR.ASMを提供しません。
