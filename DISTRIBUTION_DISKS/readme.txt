@@ -1,6 +1,3 @@
-# ファイルリスト
-PCjsによれば5枚組のフロッピーは160KBフォーマットで以下の内容が入っていたようです。
-
 https://www.pcjs.org/disks/pcx86/dos/microsoft/2.00/
 
 # DISK.1

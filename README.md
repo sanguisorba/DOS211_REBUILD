@@ -12,15 +12,13 @@ MS-DOS 2.11のリビルドについて研究しています。
 
 # 開発環境
 * PC-98エミュレータ Neko Project 21/W
-* MS-DOS 5.0A 基本機能セット
-* MS-DOS 5.0A 拡張機能セット (LINK, EXE2BIN)
-* Microsoft MACRO Assembler 4.0 (MASM)
-
+* PC-9800シリーズ用 MS-DOS 2.11
+* N5200/05用 MS-DOS 2.0より、MASM 1.20 (CREF, LIB, LINK含む)
 # MS-DOSのソースコードの中身
 
 https://github.com/microsoft/MS-DOS
 
-ここのv20の中身は2.11のソースコードとMS-DOS Distribution Disks 2.00が合わさったものです。
+v20フォルダの中身は2.11のソースコードとMS-DOS Distribution Disks 2.00が合わさったものです。
 
 当時は現代のように「汎用PC」なるものが存在せず、メーカーによって規格が異なったため、当然OSもその規格に併せてカスタマイズする必要がありました。
 

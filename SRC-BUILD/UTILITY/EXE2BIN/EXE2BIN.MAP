@@ -1,8 +1,0 @@
-
- Start  Stop   Length Name                   Class
- 00000H 002ADH 002AEH CODE                   
- 002AEH 00470H 001C3H DATA                   
- 00480H 004FFH 00080H STACK                  
- 00500H 00500H 00000H ZLOAD                  
-
-Program entry point at 0000:0000
