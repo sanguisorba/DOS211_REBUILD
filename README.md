@@ -11,6 +11,15 @@ http://www.seasip.info/DOS/
 
 ただビルドしただけなのでsanguisorbaに追加の著作権等はありません。
 
+# 中身
+
+* BIN_200 - MS-DOS 2.00のバイナリファイル (Distribution Disksのバイナリをそのまま持ってきたもの)
+* BIN_211 - MS-DOS 2.11のバイナリファイル (新たにビルドしなおしたもの)
+* DISTRIBUTION_DISKS - 元のソースコードのうち、Distribution Disksに分類されるもの
+* OBJ_211 - ソースコードをビルドした時に出てきたもの全て
+* SRC_211 - 元のソースコードのうち、MS-DOS 2.11のビルドに関係あるもの全て
+* TRASHBOX - ゴミ箱
+
 # 概要
 MS-DOS 2.11のソースコードをできる範囲でリビルドしました。
 
