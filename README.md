@@ -1,5 +1,7 @@
 # DOS211_REBUILD
-Rebuild MS-DOS 2.11
+<img width="320" height="200" align="center" style="float: center; margin: 0 10px 0 0;" alt="MS-DOS SCREENSHOT" src="https://github.com/sanguisorba/DOS211_REBUILD/blob/master/screenshot.png"> 
+
+画像:ビルド例 (NEC PC-9800 Series)
 
 # LICENSE
 殆ど全てのソースコードはマイクロソフトがMITライセンスで配布したものです。
@@ -7,8 +9,10 @@ Rebuild MS-DOS 2.11
 MSDOS.SYS及びMSDOS211フォルダ内のソースコードはJohn Elliott氏によるものです。
 http://www.seasip.info/DOS/
 
+ただビルドしただけなのでsanguisorbaに追加の著作権等はありません。
+
 # 概要
-MS-DOS 2.11のリビルドについて研究しています。
+MS-DOS 2.11のソースコードをできる範囲でリビルドしました。
 
 # 開発環境
 * PC-98エミュレータ Neko Project 21/W
@@ -27,14 +31,14 @@ MS-DOS Distribution Disksはマイクロソフトが開発を請け負ってい�
 ちなみにオリジナルソースコードのフォルダにはゴミが入っています。WSBAUD.BAS, WSMSGS.OVR, WSOVLY1.OVRはWordStar 3.2のプログラムの一部です。.TXTは全てMS-DOS Distribution Disks内の.DOCと同一です。
 
 # 何をしたか
-まずこのレポジトリではソースコードとDistribution Disksを分けました。そしてファイルがそろっているものはビルドも行っています。
+ソースコードとDistribution Disksを分けました。そしてファイルがそろっているものはビルドも行っています。
 
 # 最終的に何ができるか
 ユーティリティはCHKDSK, DEBUG, DISKCOPY, EDLIN, EXE2BIN, FC, FIND, MORE, PRINT, RECOVER, SORT, SYS
 
 OS本体のうちCOMMAND.COMも難なく生成できます
 
-ブートローダ,IO.SYS,MSDOS.SYS,FORMAT.COMは自力で書く必要があります。
+ブートローダ,IO.SYS,MSDOS.SYS,FORMAT.COMはファイルが足りないので自力で書く必要があります。
 
 MSDOS.SYSは有志が書いたものがあります。
 
@@ -42,15 +46,17 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 
 # ブータブルイメージ作成方法
 
-* 本レポジトリはマイクロソフトが本来していたビルド作業を完了していますが、メーカーOEMが行うビルド作業をしていません。
+* 本レポジトリはマイクロソフトが本来していたビルド作業は全て行っていますが、メーカーOEMが行うビルド作業はしていません。
 
 * メーカーOEMが書かなければならないのはBOOT.ASM(ブートローダ), BIOS.ASM(for IO.SYS), OEMFOR.ASM(for FORMAT.COM) の3つです。
 
-* BIOS.ASMはSYSINIT.OBJとSYSIMES.OBJと共にLINKする必要があります。この2つのファイルはIO_BUILDフォルダに格納されています。
+* Distribution disks付属のMASMはうまく動作してくれないので別途用意する必要があります。PC98用でも動きます。
 
-* OEMFOR.ASMはFORMAT.OBJとFORMES.OBJと共にLINKする必要があります。この2つのファイルはFORMAT_BUILDフォルダに格納されています。
+* BIOS.OBJはSYSINIT.OBJとSYSIMES.OBJと共にLINKする必要があります。この2つのファイルはIO_BUILDフォルダに格納されています。
 
-* BOOT.ASMは単独でEXEに吐き出します。ブートセクタですから過不足なく512byteにしなければなりません。
+* OEMFOR.OBJはFORMAT.OBJとFORMES.OBJと共にLINKする必要があります。この2つのファイルはFORMAT_BUILDフォルダに格納されています。
+
+* BOOT.OBJは単独でEXEに吐き出します。ブートセクタですから過不足なく512byteにしなければなりません。
 
 * EXE2BINでBOOT.EXEはBOOT.COM, BIOS.EXEはIO.SYS, FORMAT.EXEはFORMAT.COMにします。
 
@@ -60,3 +66,5 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 
 
 # 本レポジトリではBOOT.ASM, BIOS.ASM, OEMFOR.ASMを提供しません。
+
+ちなみにPC-9800シリーズで動作させるためにはMSDOS.SYSのソースコード系も生では使えないので改造する必要があります。
