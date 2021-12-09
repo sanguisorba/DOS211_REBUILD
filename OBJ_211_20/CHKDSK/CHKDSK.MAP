@@ -1,0 +1,12 @@
+
+Warning: No STACK segment
+
+ Start  Stop   Length  Name                   Class
+ 00000H 011D3H 11D4H  CODE                   
+ 011D4H 019F3H 0820H  CONST                  
+ 019F4H 01A43H 0050H  DATA                   
+
+ Origin   Group
+ 0000:0   DG
+
+Program entry point at 0000:0100

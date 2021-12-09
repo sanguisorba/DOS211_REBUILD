@@ -1,0 +1,12 @@
+
+
+ Start  Stop   Length  Name                   Class
+ 00000H 006ADH 06AEH  CODE                   
+ 006AEH 00818H 016BH  CONST                  
+ 0081AH 028C9H 20B0H  DATA                   
+ 028D0H 029CFH 0100H  STACK                  
+
+ Origin   Group
+ 0000:0   DG
+
+Program entry point at 0000:0000

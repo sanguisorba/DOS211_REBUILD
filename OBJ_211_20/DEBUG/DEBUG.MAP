@@ -1,0 +1,12 @@
+
+Warning: No STACK segment
+
+ Start  Stop   Length  Name                   Class
+ 00000H 01FEDH 1FEEH  CODE                   CODE
+ 01FEEH 02E46H 0E59H  CONST                  
+ 02E47H 03071H 022BH  DATA                   
+
+ Origin   Group
+ 0000:0   DG
+
+Program entry point at 0000:0100

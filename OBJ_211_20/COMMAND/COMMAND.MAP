@@ -1,0 +1,22 @@
+
+Warning: No STACK segment
+
+ Start  Stop   Length  Name                   Class
+ 00000H 005EFH 05F0H  CODERES                
+ 005F0H 00ACFH 04E0H  DATARES                
+ 00AD0H 00B7FH 00B0H  ENVIRONMENT            
+ 00B80H 00F7FH 0400H  INIT                   
+ 00F80H 00F80H 0000H  TAIL                   
+ 00F80H 034FFH 2580H  TRANCODE               
+ 03500H 03A9FH 05A0H  TRANDATA               
+ 03AA0H 03F54H 04B5H  TRANSPACE              
+ 03F60H 03F60H 0000H  TRANTAIL               
+ 03F60H 03F60H 0000H  ZEXEC_CODE             
+ 03F60H 03F60H 0000H  ZEXEC_DATA             
+
+ Origin   Group
+ 03F6:0   EGROUP
+ 00F8:0   TRANGROUP
+ 0000:0   RESGROUP
+
+Program entry point at 0000:0100

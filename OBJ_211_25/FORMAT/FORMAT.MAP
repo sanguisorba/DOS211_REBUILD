@@ -1,0 +1,9 @@
+
+Warning: No STACK segment
+
+ Start  Stop   Length  Name                   Class
+ 00000H 011F7H 11F8H  CODE                   CODE
+
+ Origin   Group
+
+Program entry point at 0000:0100

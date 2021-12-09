@@ -1,0 +1,13 @@
+
+
+Warning: no stack segment
+
+ Start  Stop   Length Name                   Class
+ 00000H 007EAH 007EBH CODE                   
+ 007EBH 009B1H 001C7H CONST                  
+ 009B2H 009F6H 00045H DATA                   
+
+ Origin   Group
+ 0000:0   DG
+
+Program entry point at 0000:0100

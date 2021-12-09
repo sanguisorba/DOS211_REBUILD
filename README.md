@@ -3,6 +3,9 @@
 
 画像:ビルド例 (NEC PC-9800 Series)
 
+# 概要
+MS-DOS 2.11のソースコードをMASM 1.20用に調整・リビルドしました。
+
 # LICENSE
 殆ど全てのソースコードはマイクロソフトがMITライセンスで配布したものです。
 
@@ -14,20 +17,20 @@ http://www.seasip.info/DOS/
 # 中身
 
 * BIN_200 - MS-DOS 2.00のバイナリファイル (Distribution Disksのバイナリをそのまま持ってきたもの)
-* BIN_211 - MS-DOS 2.11のバイナリファイル (新たにビルドしなおしたもの)
+* BIN_211 - MS-DOS 2.11のバイナリファイル (MASM 1.20)
 * DISTRIBUTION_DISKS - 元のソースコードのうち、Distribution Disksに分類されるもの
-* OBJ_211 - ソースコードをビルドした時に出てきたもの全て
+* OBJ_211_20 - ソースコードをビルドした時に出てきたもの全て (MASM 1.20)
+* OBJ_211_25 - ソースコードをビルドした時に出てきたもの全て (MASM 1.25)
+* OBJ_211_40 - ソースコードをビルドした時に出てきたもの全て (MASM 4.00)
 * SRC_211 - 元のソースコードのうち、MS-DOS 2.11のビルドに関係あるもの全て
 * TRASHBOX - ゴミ箱
-
-# 概要
-MS-DOS 2.11のソースコードをできる範囲でリビルドしました。
 
 # 開発環境
 * PC-98エミュレータ Neko Project 21/W
 * PC-9800シリーズ用 MS-DOS 2.11
-* N5200/05用 MS-DOS 2.0より、MASM 1.20
-* LINK.EXE (N5200/05 MS-DOS 2.0付属のものと、Distribution Disks - DISK1付属のものはバイナリ一致でした)
+* MASM 1.20 + LINK 2.00 (Distribution Diskと同一)
+* MASM 1.25 + LINK 2.00 ((Distribution Diskと同一)
+* MASM 4.00 日本マイクロソフト版 (EXEMOD付属)
 
 # MS-DOSのソースコードの中身
 
@@ -51,29 +54,9 @@ OS本体のうちCOMMAND.COMも難なく生成できます
 
 ブートローダ,IO.SYS,MSDOS.SYS,FORMAT.COMはファイルが足りないので自力で書く必要があります。
 
-MSDOS.SYSは有志が書いたものがあります。
+MSDOS.SYSは有志が書いたものがあります。 (1.xx非対応のため4.00でのみコンパイルしてます)
 
 FORMAT.COMはとりあえず生成できますが、実行するとブートセクタ領域が0で埋められるので自力で書く必要があります。
-
-# ブータブルイメージ作成方法
-
-* 本レポジトリはマイクロソフトが本来していたビルド作業は全て行っていますが、メーカーOEMが行うビルド作業はしていません。
-
-* メーカーOEMが書かなければならないのはBOOT.ASM(ブートローダ), BIOS.ASM(for IO.SYS), OEMFOR.ASM(for FORMAT.COM) の3つです。
-
-* Distribution disks付属のMASMはうまく動作してくれないので別途用意する必要があります。PC98用でも動きます。
-
-* BIOS.OBJはSYSINIT.OBJとSYSIMES.OBJと共にLINKする必要があります。この2つのファイルはIO_BUILDフォルダに格納されています。
-
-* OEMFOR.OBJはFORMAT.OBJとFORMES.OBJと共にLINKする必要があります。この2つのファイルはFORMAT_BUILDフォルダに格納されています。
-
-* BOOT.OBJは単独でEXEに吐き出します。ブートセクタですから過不足なく512byteにしなければなりません。
-
-* EXE2BINでBOOT.EXEはBOOT.COM, BIOS.EXEはIO.SYS, FORMAT.EXEはFORMAT.COMにします。
-
-* BOOT.COMの内容をブートセクタに書き込みます。フロッピーディスクイメージをバイナリエディタで上書きすると良いです。
-
-* BINフォルダ内の他のものをフロッピーディスクへ書き込めば完成です。
 
 # とりあえず動かしてみたい人向け
 
@@ -86,4 +69,5 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 
 # 本レポジトリではBOOT.ASM, BIOS.ASM, OEMFOR.ASMを提供しません。
 
-20210722ビルドより、PC-98上でMSDOS.SYSを動かせるようになりました
+20210722 PC-98上でMSDOS.SYSを動かせるようになりました
+20211210 MASM 1.25追加、 旧ビルドの MASM 4.00版のOBJ（BIN含む）を再アップロード

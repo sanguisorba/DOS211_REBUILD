@@ -1,0 +1,70 @@
+Microsoft (R) Macro Assembler  Version 4.00                 12/10/21 03:59:34
+                                                            Page     1-1
+                                                            
+
+ 0000                           SYSINITSEG      SEGMENT PUBLIC BYTE 'SYSTEM_INI
+				T' 
+                                 
+                                        PUBLIC  BADOPM,CRLFM,BADSIZ,BADLD,BADCO
+				M,SYSSIZE 
+                                 
+ 0000  0D 0A 55 6E 72 65 63     BADOPM  DB      13,10,"Unrecognized command in 
+				CONFIG.SYS" 
+       6F 67 6E 69 7A 65 64     
+       20 63 6F 6D 6D 61 6E     
+       64 20 69 6E 20 43 4F     
+       4E 46 49 47 2E 53 59     
+       53                       
+ 0024  0D 0A 24                 CRLFM   DB      13,10,'$' 
+                                 
+ 0027  0D 0A 53 65 63 74 6F     BADSIZ  DB      13,10,"Sector size too large in
+				 file $" 
+       72 20 73 69 7A 65 20     
+       74 6F 6F 20 6C 61 72     
+       67 65 20 69 6E 20 66     
+       69 6C 65 20 24           
+                                 
+ 0048  0D 0A 42 61 64 20 6F     BADLD   DB      13,10,"Bad or missing $" 
+       72 20 6D 69 73 73 69     
+       6E 67 20 24              
+                                 
+ 005A  43 6F 6D 6D 61 6E 64     BADCOM  DB      "Command Interpreter",0 
+       20 49 6E 74 65 72 70     
+       72 65 74 65 72 00        
+                                 
+ 006E                           SYSSIZE LABEL   BYTE 
+                                 
+ 006E                           SYSINITSEG      ENDS 
+                                        END 
+Microsoft (R) Macro Assembler  Version 4.00                 12/10/21 03:59:34
+                                                            Symbols-1
+                                                             
+
+Segments and Groups:
+
+                N a m e         	Size	Align	Combine Class
+
+SYSINITSEG . . . . . . . . . . .  	006E	BYTE	PUBLIC	'SYSTEM'
+
+Symbols:            
+
+                N a m e         	Type	Value	Attr         
+
+BADCOM . . . . . . . . . . . . .  	L BYTE 	005A	SYSINITSEG	Global
+BADLD  . . . . . . . . . . . . .  	L BYTE 	0048	SYSINITSEG	Global
+BADOPM . . . . . . . . . . . . .  	L BYTE 	0000	SYSINITSEG	Global
+BADSIZ . . . . . . . . . . . . .  	L BYTE 	0027	SYSINITSEG	Global
+
+CRLFM  . . . . . . . . . . . . .  	L BYTE 	0024	SYSINITSEG	Global
+
+SYSSIZE  . . . . . . . . . . . .  	L BYTE 	006E	SYSINITSEG	Global
+
+
+     17 Source  Lines
+     17 Total   Lines
+     29 Symbols
+
+  49922 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors

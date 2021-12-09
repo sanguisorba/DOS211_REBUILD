@@ -1,0 +1,9 @@
+
+Warning: No STACK segment
+
+ Start  Stop   Length  Name                   Class
+ 00000H 0120BH 120CH  CODE                   
+
+ Origin   Group
+
+Program entry point at 0000:0100
