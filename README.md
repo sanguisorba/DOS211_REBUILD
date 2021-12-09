@@ -70,4 +70,5 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 # 本レポジトリではBOOT.ASM, BIOS.ASM, OEMFOR.ASMを提供しません。
 
 20210722 PC-98上でMSDOS.SYSを動かせるようになりました
+
 20211210 MASM 1.25追加、 旧ビルドの MASM 4.00版のOBJ（BIN含む）を再アップロード
