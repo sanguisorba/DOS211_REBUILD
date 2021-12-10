@@ -27,10 +27,36 @@ http://www.seasip.info/DOS/
 
 # 開発環境
 * PC-98エミュレータ Neko Project 21/W
-* PC-9800シリーズ用 MS-DOS 2.11
+* PC-9800シリーズ用 MS-DOS 5.0
 * MASM 1.20 + LINK 2.00 (Distribution Diskと同一)
-* MASM 1.25 + LINK 2.00 ((Distribution Diskと同一)
+```
+MASM 1.20 (in NEC N5200/05 KANJI system 2.11)
+MASM     EXE     80128 83-07-21   11:23
+```
+* MASM 1.25 + LINK 2.00 (Distribution Diskと同一)
+```
+MASM 1.25 (in NEC A.P.C. MS-DOS 2.11)
+MASM     EXE     80856 83-10-19   19:52
+```
 * MASM 4.00 日本マイクロソフト版 (EXEMOD付属)
+NECが販売していたバージョンとは異なるようです
+```
+MASM     EXE     87124 87-01-26    4:00
+LINK     EXE     43988 85-10-16    4:00
+SYMDEB   EXE     37021 85-10-16    4:00
+MAPSYM   EXE     18026 85-10-16    4:00
+CREF     EXE     15028 85-10-16    4:00
+LIB      EXE     28716 85-10-16    4:00
+MAKE     EXE     24300 85-10-16    4:00
+EXEPACK  EXE     10848 85-10-16    4:00
+EXEMOD   EXE     11034 85-10-16    4:00
+COUNT    ASM      5965 85-10-16    4:00
+README   DOC      7630 85-10-16    4:00
+EV       ORG     43010 87-02-26   15:25
+INSTJ    EXE     20580 87-02-26   15:25
+INSTA    EXE     20492 87-02-26   15:25
+EV       EXE     43010 87-02-26   15:25
+```
 
 # MS-DOSのソースコードの中身
 
