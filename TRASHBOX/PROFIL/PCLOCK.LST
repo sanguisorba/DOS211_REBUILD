@@ -1,0 +1,175 @@
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-1
+CLOCK - Enable/disable clock interrupts
+
+
+ 	 	 	 	        TITLE   CLOCK - Enable/disable clock in
+	 	 	 	terrupts
+ 	 	 	 	
+ 	 	 	 	; "CLOCK" module for MS-DOS profile program. Th
+	 	 	 	is implements the
+ 	 	 	 	;       PROFIL program on the Seattle Computer 
+	 	 	 	Products 8086 system
+ 	 	 	 	
+ 0000	 	 	 	INTSEG  SEGMENT AT 0
+ 007C	 	 	 	        ORG     60H+7*4
+ 007C	 	 	 	INTVECTOR LABEL WORD
+ 007C	 	 	 	INTSEG  ENDS
+ 	 	 	 	
+ 0000	 	 	 	CODE    SEGMENT BYTE PUBLIC
+ 	 	 	 	
+ 	 	 	 	        PUBLIC  CLOCKON,CLOCKOFF,LEAVE_INT
+ 	 	 	 	
+ 	 	 	 	        EXTRN   CLK_INTER:NEAR
+ 	 	 	 	
+ 	 	 	 	        ASSUME  CS:CODE, DS:CODE, ES:CODE
+ 	 	 	 	
+ = 00F0	 	 	 	BASE=           0F0H
+ = 00F5	 	 	 	STCSTAT=        BASE+5
+ = 00F4	 	 	 	STCDATA=        BASE+4
+ = 00F5	 	 	 	STCCOMND=       BASE+5
+ = 00F2	 	 	 	SLAVECOM=       BASE+2
+ = 00F0	 	 	 	MASTCOM=        BASE+0
+ = 00F3	 	 	 	SLAVEMASK=      BASE+3
+ 	 	 	 	
+ 	 	 	 	;The following mode selects F2 as counter sourc
+	 	 	 	e (400 KHz), reload from
+ 	 	 	 	;load, count up once in binary with TC toggle.
+ = 0C02	 	 	 	MODE=           0C02H
+ 	 	 	 	
+ 	 	 	 	;**********************************************
+	 	 	 	**
+ 	 	 	 	;Enable clock and start generating clock interr
+	 	 	 	upt.
+ 	 	 	 	;       Clock interval in micro seconds passed 
+	 	 	 	in DX
+ 0000	 	 	 	CLOCKON PROC    NEAR
+ 0000  B0 04	 	 	        MOV     AL,4                    ;Set po
+	 	 	 	inter to mode register 4
+ 0002  E6 F5	 	 	        OUT     STCCOMND,AL
+ 0004  B0 02	 	 	        MOV     AL,MODE AND 0FFH        ;Low by
+	 	 	 	te of mode
+ 0006  E6 F4	 	 	        OUT     STCDATA,AL
+ 0008  B0 0C	 	 	        MOV     AL,MODE/100H            ;High b
+	 	 	 	yte of mode
+ 000A  E6 F4	 	 	        OUT     STCDATA,AL
+ 000C  B0 0C	 	 	        MOV     AL,0CH                  ;Counte
+	 	 	 	r 4 load register
+ 000E  E6 F5	 	 	        OUT     STCCOMND,AL
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-2
+CLOCK - Enable/disable clock interrupts
+
+
+ 0010  92	 	 	        XCHG    AX,DX                   ;Count 
+	 	 	 	in microseconds
+ 0011  33 D2	 	 	        XOR     DX,DX
+ 0013  D1 E0	 	 	        SHL     AX,1
+ 0015  D1 D2	 	 	        RCL     DX,1                    ;Count 
+	 	 	 	in DX:AX times 2
+ 0017  BB 0005	 	 	        MOV     BX,5
+ 001A  F7 F3	 	 	        DIV     BX                      ;AX=Cou
+	 	 	 	nt/2.5
+ 001C  E6 F4	 	 	        OUT     STCDATA,AL
+ 001E  8A C4	 	 	        MOV     AL,AH
+ 0020  E6 F4	 	 	        OUT     STCDATA,AL              ;Set th
+	 	 	 	e load register
+ 0022  B0 E4	 	 	        MOV     AL,0E4H                 ;Clear 
+	 	 	 	output 4
+ 0024  E6 F5	 	 	        OUT     STCCOMND,AL
+ 	 	 	 	
+ 	 	 	 	        ASSUME  DS:INTSEG
+ 	 	 	 	
+ 0026  1E	 	 	        PUSH    DS
+ 0027  33 C0	 	 	        XOR     AX,AX
+ 0029  8E D8	 	 	        MOV     DS,AX
+ 	 	 	 	;Set the clock interrupt
+ 002B  C7 06 007C R 0000 E	        MOV     INTVECTOR,OFFSET CLK_INTER
+ 0031  8C 0E 007E R	 	        MOV     INTVECTOR+2,CS
+ 0035  1F	 	 	        POP     DS
+ 	 	 	 	
+ 	 	 	 	        ASSUME  DS:CODE
+ 	 	 	 	
+ 0036  E4 F3	 	 	        IN      AL,SLAVEMASK
+ 0038  24 7F	 	 	        AND     AL,7FH                  ;Enable
+	 	 	 	 counter 4 interrupt
+ 003A  E6 F3	 	 	        OUT     SLAVEMASK,AL
+ 003C  B0 68	 	 	        MOV     AL,68H                  ;Load a
+	 	 	 	nd arm counter 4
+ 003E  E6 F5	 	 	        OUT     STCCOMND,AL             ;Let he
+	 	 	 	r rip!
+ 0040  C3	 	 	        RET
+ 0041	 	 	 	CLOCKON ENDP
+ 	 	 	 	
+ 	 	 	 	;**********************************************
+	 	 	 	**
+ 	 	 	 	;Disable clock and clock interrupt
+ 0041	 	 	 	CLOCKOFF PROC   NEAR
+ 0041  E4 F3	 	 	        IN      AL,SLAVEMASK
+ 0043  0C 80	 	 	        OR      AL,80H                  ;Turn o
+	 	 	 	ff counter 4 interrupt
+ 0045  E6 F3	 	 	        OUT     SLAVEMASK,AL
+ 0047  C3	 	 	        RET
+ 0048	 	 	 	CLOCKOFF ENDP
+ 	 	 	 	
+ 	 	 	 	
+ 	 	 	 	;**********************************************
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-3
+CLOCK - Enable/disable clock interrupts
+
+
+	 	 	 	**
+ 	 	 	 	;This routine is jumped to from the CLK_INTER
+ 	 	 	 	;       routine to perform and steps to reset t
+	 	 	 	he interrupt
+ 0048	 	 	 	LEAVE_INT:
+ 0048  50	 	 	        PUSH    AX
+ 0049  B0 E4	 	 	        MOV     AL,0E4H                 ;Clear 
+	 	 	 	output 4
+ 004B  E6 F5	 	 	        OUT     STCCOMND,AL
+ 004D  B0 20	 	 	        MOV     AL,20H                  ;End-of
+	 	 	 	-interrupt command
+ 004F  E6 F2	 	 	        OUT     SLAVECOM,AL
+ 0051  E6 F0	 	 	        OUT     MASTCOM,AL
+ 0053  B0 68	 	 	        MOV     AL,68H                  ;Load a
+	 	 	 	nd arm counter 4
+ 0055  E6 F5	 	 	        OUT     STCCOMND,AL
+ 0057  58	 	 	        POP     AX
+ 0058  CF	 	 	        IRET
+ 	 	 	 	
+ 0059	 	 	 	CODE    ENDS
+ 	 	 	 	        END
+
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	Symbols
+	 	 	 	-1
+CLOCK - Enable/disable clock interrupts
+
+
+Segments and groups:
+
+	 	N a m e	 	 	Size	align	combine	class
+
+CODE . . . . . . . . . . . . . .	0059	BYTE  	PUBLIC	
+INTSEG . . . . . . . . . . . . .	007C	AT    	0000	
+
+Symbols:            
+
+	 	N a m e	 	 	Type	Value	Attr         
+
+BASE . . . . . . . . . . . . . .	Number	00F0	
+CLK_INTER. . . . . . . . . . . .	L NEAR 	0000	CODE	External
+CLOCKOFF . . . . . . . . . . . .	N PROC	0041	CODE	Global	Length 
+	 	 	 	=0007
+CLOCKON. . . . . . . . . . . . .	N PROC	0000	CODE	Global	Length 
+	 	 	 	=0041
+INTVECTOR. . . . . . . . . . . .	L WORD 	007C	INTSEG
+LEAVE_INT. . . . . . . . . . . .	L NEAR 	0048	CODE	Global
+MASTCOM. . . . . . . . . . . . .	Number	00F0	
+MODE . . . . . . . . . . . . . .	Number	0C02	
+SLAVECOM . . . . . . . . . . . .	Number	00F2	
+SLAVEMASK. . . . . . . . . . . .	Number	00F3	
+STCCOMND . . . . . . . . . . . .	Number	00F5	
+STCDATA. . . . . . . . . . . . .	Number	00F4	
+STCSTAT. . . . . . . . . . . . .	Number	00F5	
+
+Warning Severe
+Errors	Errors 
+0	0

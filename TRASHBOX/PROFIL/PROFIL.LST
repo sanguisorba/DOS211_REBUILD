@@ -1,0 +1,1113 @@
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-1
+PROFIL - MS-DOS Profile program
+
+
+ 	 	 	 	        TITLE   PROFIL - MS-DOS Profile program
+ 	 	 	 	
+ 	 	 	 	;Profiler for MS-DOS 1.25 2.00
+ 	 	 	 	;
+ 	 	 	 	; Lots of stuff stolen from debug.
+ 	 	 	 	; User provides # of paragraphs per bucket, pro
+	 	 	 	gram is cut up accordingly.
+ 	 	 	 	; User also specifies clock interval
+ 	 	 	 	
+ 	 	 	 	
+ 	 	 	 	;System calls
+ = 0009	 	 	 	PRINTBUF        EQU     9
+ = 001A	 	 	 	SETDMA          EQU     26
+ = 0016	 	 	 	CREATE          EQU     22
+ = 000F	 	 	 	OPEN            EQU     15
+ = 0010	 	 	 	CLOSE           EQU     16
+ = 000A	 	 	 	GETBUF          EQU     10
+ = 0028	 	 	 	BLKWRT          EQU     40
+ = 0027	 	 	 	BLKRD           EQU     39
+ = 0002	 	 	 	OUTCH           EQU     2
+ = 0026	 	 	 	SETBASE         EQU     38
+ 	 	 	 	
+ = 005C	 	 	 	FCB             EQU     5CH
+ = 0050	 	 	 	BUFLEN          EQU     80
+ 	 	 	 	
+ 	 	 	 	; FCB offsets
+ = 0021	 	 	 	RR              EQU     33
+ = 000E	 	 	 	RECLEN          EQU     14
+ = 0010	 	 	 	FILELEN         EQU     16
+ 	 	 	 	
+ 	 	 	 	
+ 	 	 	 	;Segments in load order
+ 	 	 	 	
+ 0000	 	 	 	CODE    SEGMENT PUBLIC
+ 0000	 	 	 	CODE    ENDS
+ 	 	 	 	
+ 0000	 	 	 	DATA    SEGMENT BYTE
+ 0000	 	 	 	DATA    ENDS
+ 	 	 	 	
+ 0000	 	 	 	INIT    SEGMENT BYTE
+ 0000	 	 	 	INIT    ENDS
+ 	 	 	 	
+ 	 	 	 	DG      GROUP   CODE,DATA,INIT
+ 	 	 	 	
+ 	 	 	 	;The data segment
+ 	 	 	 	
+ 0000	 	 	 	DATA    SEGMENT BYTE
+ 0000	 	 	 	        ORG     0
+ 0000  0D 0A 50 72 6F 67	ENDMES          DB      13,10,"Program terminat
+	 	 	 	ed normally",13,10,"$"
+       72 61 6D 20 74 65	
+       72 6D 69 6E 61 74	
+       65 64 20 6E 6F 72	
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-2
+PROFIL - MS-DOS Profile program
+
+
+       6D 61 6C 6C 79 0D	
+       0A 24	 	 	
+ 0020  0D 0A 50 72 6F 67	ABORTMES        DB      13,10,"Program aborted"
+	 	 	 	,13,10,"$"
+       72 61 6D 20 61 62	
+       6F 72 74 65 64 0D	
+       0A 24	 	 	
+ 0034  50 72 6F 67 72 61	TOOBIG          DB      "Program too big",13,10
+	 	 	 	,"$"
+       6D 20 74 6F 6F 20	
+       62 69 67 0D 0A 24	
+ 0046  45 58 45 20 66 69	EXEBAD          DB      "EXE file bad",13,10,"$
+	 	 	 	"
+       6C 65 20 62 61 64	
+       0D 0A 24	 	 	
+ 	 	 	 	
+ 0055	 	 	 	OUT_FCB         LABEL   WORD
+ 0055  00	 	 	                DB      0
+ 0056  20 20 20 20 20 20	OUTNAME         DB      "        PRF"
+       20 20 50 52 46	 	
+ 0061     1E [	 	 	                DB      30 DUP(0)
+                00	 	
+                    ]	 	
+ 	 	 	 	
+ 	 	 	 	
+ 007F     80 [	 	 	                DB      80H DUP(?)
+                ??	 	
+                    ]	 	
+ 	 	 	 	
+ 00FF	 	 	 	STACK           LABEL   WORD
+ 	 	 	 	
+ 00FF     50 [	 	 	BYTEBUF         DB      BUFLEN DUP(?)          
+	 	 	 	 ;Processed input queue
+                ??	 	
+                    ]	 	
+ 	 	 	 	
+ 014F  ????	 	 	AXSAVE          DW      ?                      
+	 	 	 	 ;See interrupt routine
+ 0151  ????	 	 	BXSAVE          DW      ?                      
+	 	 	 	 ; "     "        "
+ 0153  ????	 	 	PROG_AREA       DW      ?                      
+	 	 	 	 ;Segment of program start
+ 	 	 	 	
+ 	 	 	 	;EXE file header
+ 0155	 	 	 	RUNVAR          LABEL   WORD
+ 0155  ????	 	 	RELPT           DW      ?
+ 0157	 	 	 	LASTP           LABEL   WORD
+ 0157  ????	 	 	RELSEG          DW      ?
+ 0159	 	 	 	PSIZE           LABEL   WORD
+ 0159  ????	 	 	PAGES           DW      ?
+ 015B  ????	 	 	RELCNT          DW      ?
+ 015D  ????	 	 	HEADSIZ         DW      ?
+ 015F  ????	 	 	                DW      ?
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-3
+PROFIL - MS-DOS Profile program
+
+
+ 0161  ????	 	 	LOADLOW         DW      ?
+ 0163	 	 	 	PROG_SS         LABEL   WORD                   
+	 	 	 	 ;Program stack seg
+ 0163  ????	 	 	INITSS          DW      ?
+ 0165	 	 	 	PROG_SP         LABEL   WORD                   
+	 	 	 	 ;Program SP
+ 0165  ????	 	 	INITSP          DW      ?
+ 0167  ????	 	 	                DW      ?
+ = 0169	 	 	 	PROG_ENTRY      EQU     THIS DWORD
+ 0169	 	 	 	PROG_RA         LABEL   WORD                   
+	 	 	 	 ;Program start offset
+ 0169  ????	 	 	INITIP          DW      ?
+ 016B	 	 	 	PROG_SA         LABEL   WORD                   
+	 	 	 	 ;Program start segment (may be different from 
+	 	 	 	PROG_AREA)
+ 016B  ????	 	 	INITCS          DW      ?
+ 016D  ????	 	 	RELTAB          DW      ?
+ = 001A	 	 	 	RUNVARSIZ       EQU     $-RUNVAR
+ 	 	 	 	
+ 016F  00	 	 	EXEFILE         DB      0                      
+	 	 	 	 ;Flag to indicate EXE file
+ 0170  ????	 	 	DRV_VALID       DW      ?                      
+	 	 	 	 ;Init for AX register
+ 0172	 	 	 	OUTPUT_DATA     LABEL   WORD                   
+	 	 	 	 ;Start of the profile data
+ 0172  ????	 	 	CLOCK_GRAIN     DW      ?                      
+	 	 	 	 ;Clock interval micro-seconds
+ 0174  ????	 	 	BUCKET_NUM      DW      ?                      
+	 	 	 	 ;Number of buckets
+ 0176  ????	 	 	BUCKET_SIZE     DW      ?                      
+	 	 	 	 ;Paragraphs per bucket
+ 0178  ????	 	 	PROG_LOW_PA     DW      ?                      
+	 	 	 	 ;Start of program (PARA #)
+ 017A  ????	 	 	PROG_HIGH_PA    DW      ?                      
+	 	 	 	 ;End of program (PARA #)
+ 017C  ????	 	 	DOS_PA          DW      ?                      
+	 	 	 	 ;IO-DOS PARA boundry
+ 017E  0000	 	 	HIT_IO          DW      0                      
+	 	 	 	 ;IO bucket
+ 0180  0000	 	 	HIT_DOS         DW      0                      
+	 	 	 	 ;DOS bucket
+ 0182  0000	 	 	HIT_HIGH        DW      0                      
+	 	 	 	 ;Above Program bucket
+ = 0009	 	 	 	NUM_DATA_WORDS  EQU     ($-OUTPUT_DATA)/2      
+	 	 	 	 ;Number of word items
+ 0184	 	 	 	BUCKET          LABEL   WORD                   
+	 	 	 	 ;Bucket count area
+ 	 	 	 	
+ 	 	 	 	;The following data will be overwritten when th
+	 	 	 	e buckets are initialized
+ 0184  50 01 0D	 	 	LINEBUF         DB      BUFLEN,1,0DH           
+	 	 	 	 ;Raw input buffer
+ 0187     50 [	 	 	                DB      BUFLEN DUP(?)
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-4
+PROFIL - MS-DOS Profile program
+
+
+                ??	 	
+                    ]	 	
+ 	 	 	 	
+ 	 	 	 	
+ 01D7  46 69 6C 65 20 6E	NOFILE          DB      "File not found",13,10,
+	 	 	 	"$"
+       6F 74 20 66 6F 75	
+       6E 64 0D 0A 24	 	
+ 01E8  43 61 6E 6E 6F 74	OUTERR          DB      "Cannot open output fil
+	 	 	 	e",13,10,"$"
+       20 6F 70 65 6E 20	
+       6F 75 74 70 75 74	
+       20 66 69 6C 65 0D	
+       0A 24	 	 	
+ 0202  53 61 6D 70 6C 65	GRAIN_PROMPT    DB      "Sample time (micro-sec
+	 	 	 	) >= 60 ? ","$"
+       20 74 69 6D 65 20	
+       28 6D 69 63 72 6F	
+       2D 73 65 63 29 20	
+       3E 3D 20 36 30 20	
+       3F 20 24	 	 	
+ 0223  4E 75 6D 62 65 72	SIZE_PROMPT     DB      "Number of paragraphs (
+	 	 	 	16 bytes) per bucket? ","$"
+       20 6F 66 20 70 61	
+       72 61 67 72 61 70	
+       68 73 20 28 31 36	
+       20 62 79 74 65 73	
+       29 20 70 65 72 20	
+       62 75 63 6B 65 74	
+       3F 20 24	 	 	
+ 0250  50 61 72 61 6D 65	PARAM_PROMPT    DB      "Parameters to program?
+	 	 	 	 ","$"
+       74 65 72 73 20 74	
+       6F 20 70 72 6F 67	
+       72 61 6D 3F 20 24	
+ 0268	 	 	 	DATA    ENDS
+ 	 	 	 	
+ 	 	 	 	;The resident code portion
+ 0000	 	 	 	CODE    SEGMENT PUBLIC
+ 	 	 	 	ASSUME  CS:DG,DS:DG,ES:DG,SS:DG
+ 	 	 	 	
+ 	 	 	 	;The clock interrupt routine
+ 	 	 	 	        PUBLIC  CLK_INTER
+ 	 	 	 	
+ 	 	 	 	;Stuff provided by external clock handler routi
+	 	 	 	ne
+ 	 	 	 	        EXTRN   CLOCKON:NEAR,CLOCKOFF:NEAR,LEAV
+	 	 	 	E_INT:NEAR
+ 	 	 	 	
+ 0100	 	 	 	        ORG     100H
+ 0100	 	 	 	START:
+ 0100  FC	 	 	        CLD
+ 0101  BC 00FF R	 	        MOV     SP,OFFSET DG:STACK      ;Use in
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-5
+PROFIL - MS-DOS Profile program
+
+
+	 	 	 	ternal stack
+ 0104  E8 0000 R	 	        CALL    SETUP
+ 	 	 	 	;The following setup stuff cannot be done in SE
+	 	 	 	TUP because we're probably
+ 	 	 	 	; overwritting the INIT area
+ 0107  8B 16 0153 R	 	        MOV     DX,[PROG_AREA]
+ 010B  B4 26	 	 	        MOV     AH,SETBASE
+ 010D  CD 21	 	 	        INT     21H                     ;Set ba
+	 	 	 	se for program
+ 010F  8E 06 0153 R	 	        MOV     ES,[PROG_AREA]
+ 0113  56	 	 	        PUSH    SI                      ;Points
+	 	 	 	 to BYTEBUF
+ 0114  BF 0081	 	 	        MOV     DI,81H                  ;Set un
+	 	 	 	formatted params
+ 0117	 	 	 	COMTAIL:
+ 0117  AC	 	 	        LODSB
+ 0118  AA	 	 	        STOSB
+ 0119  3C 0D	 	 	        CMP     AL,13
+ 011B  75 FA	 	 	        JNZ     COMTAIL
+ 011D  81 EF 0082	 	        SUB     DI,82H                  ;Figure
+	 	 	 	 length
+ 0121  97	 	 	        XCHG    AX,DI
+ 0122  26: A2 0080	 	        MOV     BYTE PTR ES:[80H],AL
+ 0126  5E	 	 	        POP     SI
+ 0127  BF 005C	 	 	        MOV     DI,FCB                  ;First 
+	 	 	 	param
+ 012A  B8 2901	 	 	        MOV     AX,2901H
+ 012D  CD 21	 	 	        INT     21H
+ 012F  A2 0170 R	 	        MOV     BYTE PTR [DRV_VALID],AL
+ 0132  B8 2901	 	 	        MOV     AX,2901H                
+ 0135  BF 006C	 	 	        MOV     DI,6CH                  ;Second
+	 	 	 	 param
+ 0138  CD 21	 	 	        INT     21H
+ 013A  A2 0171 R	 	        MOV     BYTE PTR [DRV_VALID+1],AL
+ 	 	 	 	
+ 013D  8C C0	 	 	        MOV     AX,ES                   ;Prog s
+	 	 	 	egment to AX
+ 013F  8B 16 0169 R	 	        MOV     DX,[PROG_RA]            ;Offset
+ 0143  80 3E 016F R 01	 	        CMP     [EXEFILE],1
+ 0148  74 03	 	 	        JZ      EXELOAD                 ;EXE fi
+	 	 	 	le
+ 014A  E9 0212 R	 	        JMP     BINFIL                  ;Regula
+	 	 	 	r file (.COM)
+ 	 	 	 	
+ 014D	 	 	 	EXELOAD:
+ 014D  A1 015D R	 	        MOV     AX,[HEADSIZ]            ;Size o
+	 	 	 	f header in paragraphs
+ 0150  05 001F	 	 	        ADD     AX,31
+ 0153  B1 04	 	 	        MOV     CL,4
+ 0155  D3 C0	 	 	        ROL     AX,CL                   ;Size i
+	 	 	 	n bytes
+ 0157  8B D8	 	 	        MOV     BX,AX
+ 0159  25 FE00	 	 	        AND     AX,0FE00H
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-6
+PROFIL - MS-DOS Profile program
+
+
+ 015C  81 E3 000F	 	        AND     BX,0FH
+ 0160  A3 007D	 	 	        MOV     WORD PTR DS:[FCB+RR],AX        
+	 	 	 	 ;Position in file of program
+ 0163  89 1E 007F	 	        MOV     WORD PTR DS:[FCB+RR+2],BX      
+	 	 	 	 ;Record size
+ 0167  8B 16 0159 R	 	        MOV     DX,[PAGES]                     
+	 	 	 	 ;Size in 512 byte blocks
+ 016B  4A	 	 	        DEC     DX
+ 016C  86 F2	 	 	        XCHG    DH,DL
+ 016E  D1 C2	 	 	        ROL     DX,1
+ 0170  8B FA	 	 	        MOV     DI,DX
+ 0172  8B F2	 	 	        MOV     SI,DX
+ 0174  81 E7 FE00	 	        AND     DI,0FE00H
+ 0178  81 E6 01FF	 	        AND     SI,1FFH
+ 017C  2B F8	 	 	        SUB     DI,AX
+ 017E  1B F3	 	 	        SBB     SI,BX
+ 0180  A1 0157 R	 	        MOV     AX,[LASTP]
+ 0183  0B C0	 	 	        OR      AX,AX
+ 0185  75 03	 	 	        JNZ     PARTP
+ 0187  B8 0200	 	 	        MOV     AX,200H
+ 018A	 	 	 	PARTP:
+ 018A  03 F8	 	 	        ADD     DI,AX
+ 018C  83 D6 00	 	 	        ADC     SI,0
+ 018F  8B C7	 	 	        MOV     AX,DI
+ 0191  05 000F	 	 	        ADD     AX,15
+ 0194  24 F0	 	 	        AND     AL,0F0H
+ 0196  0B C6	 	 	        OR      AX,SI
+ 0198  B1 04	 	 	        MOV     CL,4
+ 019A  D3 C8	 	 	        ROR     AX,CL
+ 019C  91	 	 	        XCHG    AX,CX
+ 019D  8B 1E 0153 R	 	        MOV     BX,[PROG_AREA]
+ 01A1  83 C3 10	 	 	        ADD     BX,10H
+ 01A4  A1 0002	 	 	        MOV     AX,WORD PTR DS:[2]
+ 01A7  2B C1	 	 	        SUB     AX,CX
+ 01A9  BA 0034 R	 	        MOV     DX,OFFSET DG:TOOBIG
+ 01AC  72 18	 	 	        JB      ERROR
+ 01AE  3B D8	 	 	        CMP     BX,AX
+ 01B0  77 14	 	 	        JA      ERROR
+ 01B2  83 3E 0161 R FF	 	        CMP     [LOADLOW],-1
+ 01B7  75 01	 	 	        JNZ     LOADEXE
+ 01B9  93	 	 	        XCHG    AX,BX
+ 01BA	 	 	 	LOADEXE:
+ 01BA  8B E8	 	 	        MOV     BP,AX
+ 01BC  33 D2	 	 	        XOR     DX,DX
+ 01BE  E8 0280 R	 	        CALL    READ
+ 01C1  72 09	 	 	        JC      HAVEXE
+ 01C3	 	 	 	BADEXE:
+ 01C3  BA 0046 R	 	        MOV     DX,OFFSET DG:EXEBAD
+ 	 	 	 	
+ 01C6	 	 	 	ERROR:
+ 01C6  B4 09	 	 	        MOV     AH,PRINTBUF             ;Print 
+	 	 	 	the message in DX
+ 01C8  CD 21	 	 	        INT     21H
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-7
+PROFIL - MS-DOS Profile program
+
+
+ 01CA  CD 20	 	 	        INT     20H                     ;Exit
+ 	 	 	 	
+ 01CC	 	 	 	HAVEXE:
+ 01CC  A1 016D R	 	        MOV     AX,[RELTAB]             ;Get po
+	 	 	 	sition of relocation table
+ 01CF  A3 007D	 	 	        MOV     WORD PTR DS:[FCB+RR],AX
+ 01D2  C7 06 007F 0000	 	        MOV     WORD PTR DS:[FCB+RR+2],0
+ 01D8  BA 0155 R	 	        MOV     DX,OFFSET DG:RELPT      ;Four b
+	 	 	 	yte buffer
+ 01DB  B4 1A	 	 	        MOV     AH,SETDMA
+ 01DD  CD 21	 	 	        INT     21H
+ 01DF  83 3E 015B R 00	 	        CMP     [RELCNT],0
+ 01E4  74 22	 	 	        JZ      NOREL
+ 01E6	 	 	 	RELOC:
+ 01E6  B4 27	 	 	        MOV     AH,BLKRD
+ 01E8  BA 005C	 	 	        MOV     DX,FCB
+ 01EB  B9 0004	 	 	        MOV     CX,4
+ 01EE  CD 21	 	 	        INT     21H             ;Read in one re
+	 	 	 	location pointer
+ 01F0  0A C0	 	 	        OR      AL,AL
+ 01F2  75 CF	 	 	        JNZ     BADEXE
+ 01F4  8B 3E 0155 R	 	        MOV     DI,[RELPT]      ;Pointer offset
+ 01F8  A1 0157 R	 	        MOV     AX,[RELSEG]     ;pointer segmen
+	 	 	 	t
+ 01FB  03 C5	 	 	        ADD     AX,BP           ;Bias with actu
+	 	 	 	al load segment
+ 01FD  8E C0	 	 	        MOV     ES,AX
+ 01FF  26: 01 2D	 	        ADD     ES:[DI],BP      ;Relocate
+ 0202  FF 0E 015B R	 	        DEC     [RELCNT]
+ 0206  75 DE	 	 	        JNZ     RELOC
+ 	 	 	 	
+ 0208	 	 	 	NOREL:
+ 0208  01 2E 0163 R	 	        ADD     [INITSS],BP
+ 020C  01 2E 016B R	 	        ADD     [INITCS],BP
+ 0210  EB 1F	 	 	        JMP     SHORT PROGGO
+ 	 	 	 	
+ 0212	 	 	 	BINFIL:
+ 0212  C7 06 006A 0001	 	        MOV     WORD PTR DS:[FCB+RECLEN],1
+ 0218  BE FFFF	 	 	        MOV     SI,-1
+ 021B  8B FE	 	 	        MOV     DI,SI
+ 021D  E8 0280 R	 	        CALL    READ
+ 0220  8E 06 016B R	 	        MOV     ES,[PROG_SA]            ;Prog s
+	 	 	 	egment to ES
+ 0224  26: A1 0006	 	        MOV     AX,WORD PTR ES:[6]
+ 0228  A3 0165 R	 	        MOV     [PROG_SP],AX            ;Defaul
+	 	 	 	t SP for non EXE files
+ 022B  FE CC	 	 	        DEC     AH
+ 022D  26: A3 0006	 	        MOV     WORD PTR ES:[6],AX      ;Fix si
+	 	 	 	ze
+ 	 	 	 	        
+ 0231	 	 	 	PROGGO:
+ 0231  1E	 	 	        PUSH    DS
+ 0232  A1 0153 R	 	        MOV     AX,[PROG_AREA]
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-8
+PROFIL - MS-DOS Profile program
+
+
+ 0235  8E D8	 	 	        MOV     DS,AX
+ 0237  BA 0080	 	 	        MOV     DX,80H
+ 023A  B4 1A	 	 	        MOV     AH,SETDMA
+ 023C  CD 21	 	 	        INT     21H                     ;Set de
+	 	 	 	fault disk transfer address
+ 023E  1F	 	 	        POP     DS
+ 023F  8B 1E 0174 R	 	        MOV     BX,[BUCKET_NUM]
+ 0243  D1 E3	 	 	        SHL     BX,1                    ;Mult b
+	 	 	 	y 2 to get #bytes in bucket area
+ 0245	 	 	 	CLEAR:
+ 0245  C7 87 0184 R 0000	        MOV     BUCKET[BX],0            ;Zero c
+	 	 	 	ounts
+ 024B  83 EB 02	 	 	        SUB     BX,2
+ 024E  7D F5	 	 	        JGE     CLEAR
+ 0250  8B 16 0172 R	 	        MOV     DX,[CLOCK_GRAIN]
+ 0254  1E	 	 	        PUSH    DS
+ 0255  07	 	 	        POP     ES
+ 0256  FA	 	 	        CLI                             ;Don't 
+	 	 	 	collect data yet
+ 0257  E8 0000 E	 	        CALL    CLOCKON                 ;Set th
+	 	 	 	e interrupt
+ 025A  8B 36 0169 R	 	        MOV     SI,[PROG_RA]
+ 025E  8B 3E 0153 R	 	        MOV     DI,[PROG_AREA]
+ 0262  8B 1E 0163 R	 	        MOV     BX,[PROG_SS]
+ 0266  8B 0E 0165 R	 	        MOV     CX,[PROG_SP]
+ 026A  A1 0170 R	 	        MOV     AX,[DRV_VALID]
+ 026D  8B 16 016B R	 	        MOV     DX,[PROG_SA]
+ 0271  8E D3	 	 	        MOV     SS,BX
+ 0273  8B E1	 	 	        MOV     SP,CX
+ 0275  33 C9	 	 	        XOR     CX,CX
+ 0277  51	 	 	        PUSH    CX                      ;0 on p
+	 	 	 	rog stack
+ 0278  52	 	 	        PUSH    DX
+ 0279  56	 	 	        PUSH    SI
+ 027A  8E DF	 	 	        MOV     DS,DI                   ;Set up
+	 	 	 	 segments
+ 027C  8E C7	 	 	        MOV     ES,DI
+ 027E  FB	 	 	        STI                             ;Start 
+	 	 	 	collecting data
+ 027F	 	 	 	XXX     PROC    FAR
+ 027F  CB	 	 	        RET                             ;Hop to
+	 	 	 	 program
+ 0280	 	 	 	XXX     ENDP
+ 	 	 	 	        
+ 0280	 	 	 	READ:
+ 	 	 	 	; AX:DX is disk transfer address (segment:offse
+	 	 	 	t)
+ 	 	 	 	; SI:DI is 32 bit length
+ 	 	 	 	
+ 0280	 	 	 	RDLOOP:
+ 0280  8B DA	 	 	        MOV     BX,DX
+ 0282  81 E2 000F	 	        AND     DX,000FH
+ 0286  B1 04	 	 	        MOV     CL,4
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-9
+PROFIL - MS-DOS Profile program
+
+
+ 0288  D3 EB	 	 	        SHR     BX,CL
+ 028A  03 C3	 	 	        ADD     AX,BX
+ 028C  50	 	 	        PUSH    AX
+ 028D  52	 	 	        PUSH    DX
+ 028E  1E	 	 	        PUSH    DS
+ 028F  8E D8	 	 	        MOV     DS,AX
+ 0291  B4 1A	 	 	        MOV     AH,SETDMA
+ 0293  CD 21	 	 	        INT     21H
+ 0295  1F	 	 	        POP     DS
+ 0296  BA 005C	 	 	        MOV     DX,FCB
+ 0299  B9 FFF0	 	 	        MOV     CX,0FFF0H               ;Keep r
+	 	 	 	equest in segment
+ 029C  0B F6	 	 	        OR      SI,SI                   ;Need >
+	 	 	 	 64K?
+ 029E  75 02	 	 	        JNZ     BIGRD
+ 02A0  8B CF	 	 	        MOV     CX,DI                   ;Limit 
+	 	 	 	to amount requested
+ 02A2	 	 	 	BIGRD:
+ 02A2  B4 27	 	 	        MOV     AH,BLKRD
+ 02A4  CD 21	 	 	        INT     21H
+ 02A6  2B F9	 	 	        SUB     DI,CX                   ;Subtra
+	 	 	 	ct off amount done
+ 02A8  83 DE 00	 	 	        SBB     SI,0                    ;Ripple
+	 	 	 	 carry
+ 02AB  3C 01	 	 	        CMP     AL,1                    ;EOF?
+ 02AD  5A	 	 	        POP     DX
+ 02AE  58	 	 	        POP     AX                      ;Restor
+	 	 	 	e transfer address
+ 02AF  74 08	 	 	        JZ      RET10
+ 02B1  03 D1	 	 	        ADD     DX,CX                   ;Bump t
+	 	 	 	ransfer address by last read
+ 02B3  8B DE	 	 	        MOV     BX,SI
+ 02B5  0B DF	 	 	        OR      BX,DI                   ;Finish
+	 	 	 	ed with request
+ 02B7  75 C7	 	 	        JNZ     RDLOOP
+ 02B9  F9	 	 	RET10:  STC
+ 02BA  C3	 	 	        RET
+ 	 	 	 	
+ 	 	 	 	
+ 	 	 	 	;Return here on termination or abort
+ 	 	 	 	
+ 02BB	 	 	 	TERMINATE:
+ 02BB  FA	 	 	        CLI                             ;Stop c
+	 	 	 	ollecting data
+ 02BC  BA 0000 R	 	        MOV     DX,OFFSET DG:ENDMES
+ 02BF  EB 04	 	 	        JMP     SHORT WRITEOUT
+ 02C1	 	 	 	ABORT:
+ 02C1  FA	 	 	        CLI                             ;Stop c
+	 	 	 	ollecting data
+ 02C2  BA 0020 R	 	        MOV     DX,OFFSET DG:ABORTMES
+ 02C5	 	 	 	WRITEOUT:
+ 02C5  8C C8	 	 	        MOV     AX,CS
+ 02C7  8E D8	 	 	        MOV     DS,AX
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-10
+PROFIL - MS-DOS Profile program
+
+
+ 02C9  8E D0	 	 	        MOV     SS,AX
+ 02CB  BC 00FF R	 	        MOV     SP,OFFSET DG:STACK      ;Use in
+	 	 	 	ternal stack
+ 02CE  52	 	 	        PUSH    DX
+ 02CF  E8 0000 E	 	        CALL    CLOCKOFF                ;Restor
+	 	 	 	e original clock routine
+ 02D2  FB	 	 	        STI                             ;Back t
+	 	 	 	o normal clock
+ 02D3  5A	 	 	        POP     DX
+ 02D4  B4 09	 	 	        MOV     AH,PRINTBUF
+ 02D6  CD 21	 	 	        INT     21H                     ;Apropr
+	 	 	 	iate termination message
+ 02D8  C7 06 0063 R 0002	        MOV     [OUT_FCB+14],2          ;Word s
+	 	 	 	ize records
+ 02DE  BA 0172 R	 	        MOV     DX,OFFSET DG:OUTPUT_DATA
+ 02E1  B4 1A	 	 	        MOV     AH,SETDMA
+ 02E3  CD 21	 	 	        INT     21H                     ;Set th
+	 	 	 	e transfer address
+ 02E5  B9 0009	 	 	        MOV     CX,NUM_DATA_WORDS
+ 02E8  03 0E 0174 R	 	        ADD     CX,[BUCKET_NUM]
+ 02EC  BA 0055 R	 	        MOV     DX,OFFSET DG:OUT_FCB
+ 02EF  B4 28	 	 	        MOV     AH,BLKWRT
+ 02F1  CD 21	 	 	        INT     21H                     ;Write 
+	 	 	 	out data
+ 02F3  BA 0055 R	 	        MOV     DX,OFFSET DG:OUT_FCB
+ 02F6  B4 10	 	 	        MOV     AH,CLOSE
+ 02F8  CD 21	 	 	        INT     21H
+ 02FA  CD 20	 	 	        INT     20H                     ;Exit
+ 	 	 	 	
+ 	 	 	 	
+ 	 	 	 	;The clock interrupt routine
+ 02FC	 	 	 	CLK_INTER       PROC    NEAR
+ 02FC  FA	 	 	        CLI
+ 02FD  1E	 	 	        PUSH    DS
+ 02FE  0E	 	 	        PUSH    CS
+ 02FF  1F	 	 	        POP     DS                      ;Get pr
+	 	 	 	ofile segment
+ 0300  A3 014F R	 	        MOV     [AXSAVE],AX
+ 0303  89 1E 0151 R	 	        MOV     [BXSAVE],BX
+ 0307  58	 	 	        POP     AX                      ;old DS
+ 0308  BB 0000 E	 	        MOV     BX,OFFSET DG:LEAVE_INT
+ 030B  53	 	 	        PUSH    BX
+ 030C  50	 	 	        PUSH    AX
+ 030D  06	 	 	        PUSH    ES
+ 030E  FF 36 014F R	 	        PUSH    [AXSAVE]
+ 0312  FF 36 0151 R	 	        PUSH    [BXSAVE]
+ 0316  51	 	 	        PUSH    CX
+ 0317  52	 	 	        PUSH    DX
+ 	 	 	 	
+ 	 	 	 	
+ 	 	 	 	;Stack looks like this
+ 	 	 	 	;
+ 	 	 	 	; +18   OLDFLAGS
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-11
+PROFIL - MS-DOS Profile program
+
+
+ 	 	 	 	; +16   OLDCS
+ 	 	 	 	; +14   OLDIP
+ 	 	 	 	; +12   RETURN TO LEAVE_INT
+ 	 	 	 	; +10   OLDDS
+ 	 	 	 	; +8    OLDES
+ 	 	 	 	; +6    OLDAX
+ 	 	 	 	; +4    OLDBX
+ 	 	 	 	; +2    OLDCX
+ 	 	 	 	;SP->   OLDDX
+ 	 	 	 	
+ 0318  8B DC	 	 	        MOV     BX,SP
+ 031A  36: C4 5F 0E	 	        LES     BX,DWORD PTR SS:[BX+14]        
+	 	 	 	 ;Get CS:IP
+ 031E  8B C3	 	 	        MOV     AX,BX
+ 0320  B1 04	 	 	        MOV     CL,4
+ 0322  D3 E8	 	 	        SHR     AX,CL
+ 0324  8C C1	 	 	        MOV     CX,ES
+ 0326  03 C1	 	 	        ADD     AX,CX                   ;Paragr
+	 	 	 	aph of CS:IP
+ 0328  3B 06 017C R	 	        CMP     AX,[DOS_PA]             ;Below 
+	 	 	 	DOS?
+ 032C  72 20	 	 	        JB      IOHIT
+ 032E  3B 06 0178 R	 	        CMP     AX,[PROG_LOW_PA]        ;Below 
+	 	 	 	program?
+ 0332  72 20	 	 	        JB      DOSHIT
+ 0334  3B 06 017A R	 	        CMP     AX,[PROG_HIGH_PA]       ;Above 
+	 	 	 	program?
+ 0338  73 20	 	 	        JAE     MISSH
+ 	 	 	 	
+ 033A  2B 06 0178 R	 	        SUB     AX,[PROG_LOW_PA]        ;Paragr
+	 	 	 	aph offset
+ 033E  33 D2	 	 	        XOR     DX,DX
+ 	 	 	 	        
+ 0340  F7 36 0176 R	 	        DIV     [BUCKET_SIZE]
+ 0344  8B D8	 	 	        MOV     BX,AX
+ 0346  D1 E3	 	 	        SHL     BX,1                    ;Mult b
+	 	 	 	y 2 to get byte offset
+ 0348  FF 87 0184 R	 	        INC     BUCKET[BX]
+ 034C  EB 10	 	 	        JMP     SHORT DONE
+ 	 	 	 	
+ 034E	 	 	 	IOHIT:
+ 034E  FF 06 017E R	 	        INC     [HIT_IO]
+ 0352  EB 0A	 	 	        JMP     SHORT DONE
+ 	 	 	 	
+ 0354	 	 	 	DOSHIT:
+ 0354  FF 06 0180 R	 	        INC     [HIT_DOS]
+ 0358  EB 04	 	 	        JMP     SHORT DONE
+ 	 	 	 	
+ 035A	 	 	 	MISSH:
+ 035A  FF 06 0182 R	 	        INC     [HIT_HIGH]
+ 	 	 	 	
+ 035E	 	 	 	DONE:
+ 035E  5A	 	 	        POP     DX
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-12
+PROFIL - MS-DOS Profile program
+
+
+ 035F  59	 	 	        POP     CX
+ 0360  5B	 	 	        POP     BX
+ 0361  58	 	 	        POP     AX
+ 0362  07	 	 	        POP     ES
+ 0363  1F	 	 	        POP     DS
+ 0364  FB	 	 	        STI
+ 0365  C3	 	 	        RET             ;To LEAVE_INT
+ 	 	 	 	
+ 0366	 	 	 	CLK_INTER       ENDP
+ 	 	 	 	
+ 0366	 	 	 	CODE    ENDS
+ 	 	 	 	
+ 	 	 	 	;The init segment contains code to process inpu
+	 	 	 	t parameters
+ 	 	 	 	; It will be blasted as soon as the program to 
+	 	 	 	be run is read in
+ 	 	 	 	; And/or the bucket area is initialized
+ 	 	 	 	 
+ 0000	 	 	 	INIT    SEGMENT BYTE
+ 0000	 	 	 	        ORG     0
+ 	 	 	 	
+ 0000	 	 	 	SETUP:
+ 0000  BA 005C	 	 	        MOV     DX,FCB
+ 0003  B4 0F	 	 	        MOV     AH,OPEN
+ 0005  CD 21	 	 	        INT     21H                     ;Open p
+	 	 	 	rogram file
+ 0007  22 C0	 	 	        AND     AL,AL
+ 0009  74 06	 	 	        JZ      OPENOK
+ 000B  BA 01D7 R	 	        MOV     DX,OFFSET DG:NOFILE
+ 000E  E9 01C6 R	 	        JMP     ERROR
+ 	 	 	 	
+ 0011	 	 	 	OPENOK:
+ 0011  33 DB	 	 	        XOR     BX,BX
+ 0013  89 1E 007D	 	        MOV     WORD PTR DS:[FCB+RR],BX
+ 0017  89 1E 007F	 	        MOV     WORD PTR DS:[FCB+RR+2],BX      
+	 	 	 	 ;RR to 0
+ 001B  BE 005C	 	 	        MOV     SI,FCB
+ 001E  BF 0055 R	 	        MOV     DI,OFFSET DG:OUT_FCB
+ 0021  B9 0004	 	 	        MOV     CX,4
+ 0024  F3/ A5	 	 	        REP     MOVSW
+ 0026  A4	 	 	        MOVSB                           ;Transf
+	 	 	 	er drive spec and file to output
+ 0027  BA 0055 R	 	        MOV     DX,OFFSET DG:OUT_FCB
+ 002A  B4 16	 	 	        MOV     AH,CREATE
+ 002C  CD 21	 	 	        INT     21H                     ;Try to
+	 	 	 	 create the output file
+ 002E  22 C0	 	 	        AND     AL,AL
+ 0030  74 06	 	 	        JZ      GETSIZE
+ 0032  BA 01E8 R	 	        MOV     DX,OFFSET DG:OUTERR
+ 0035  E9 01C6 R	 	        JMP     ERROR
+ 	 	 	 	
+ 0038	 	 	 	GETSIZE:                                ;Get bu
+	 	 	 	cket size
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-13
+PROFIL - MS-DOS Profile program
+
+
+ 0038  BA 0223 R	 	        MOV     DX,OFFSET DG:SIZE_PROMPT
+ 003B  B4 09	 	 	        MOV     AH,PRINTBUF
+ 003D  CD 21	 	 	        INT     21H
+ 003F  E8 0173 R	 	        CALL    INBUF
+ 0042  E8 01BC R	 	        CALL    SCANB
+ 0045  74 F1	 	 	        JZ      GETSIZE         ;SCANB went to 
+	 	 	 	CR
+ 0047  33 DB	 	 	        XOR     BX,BX
+ 0049  43	 	 	        INC     BX              ;Size >=1
+ 004A  E8 013F R	 	        CALL    GETNUM
+ 004D  72 E9	 	 	        JC      GETSIZE         ;Bad number
+ 004F  89 16 0176 R	 	        MOV     [BUCKET_SIZE],DX
+ 	 	 	 	
+ 0053  81 3E 0065 5845	 	        CMP     WORD PTR DS:[FCB+9],5800H+"E"  
+	 	 	 	         ;"EX"
+ 0059  75 39	 	 	        JNZ     NOTEXE
+ 005B  80 3E 0067 45	 	        CMP     BYTE PTR DS:[FCB+11],"E"
+ 0060  75 32	 	 	        JNZ     NOTEXE
+ 	 	 	 	
+ 0062	 	 	 	LOADEXEHEAD:                            ;Load t
+	 	 	 	he EXE header
+ 0062  C6 06 016F R 01	 	        MOV     [EXEFILE],1
+ 0067  BA 0155 R	 	        MOV     DX,OFFSET DG:RUNVAR     ;Read h
+	 	 	 	eader in here
+ 006A  B4 1A	 	 	        MOV     AH,SETDMA
+ 006C  CD 21	 	 	        INT     21H
+ 006E  B9 001A	 	 	        MOV     CX,RUNVARSIZ
+ 0071  BA 005C	 	 	        MOV     DX,FCB
+ 0074  C7 06 006A 0001	 	        MOV     WORD PTR DS:[FCB+RECLEN],1
+ 007A  0A C0	 	 	        OR      AL,AL
+ 007C  B4 27	 	 	        MOV     AH,BLKRD
+ 007E  CD 21	 	 	        INT     21H
+ 0080  81 3E 0155 R 5A4D	        CMP     [RELPT],5A4DH           ;Magic 
+	 	 	 	number
+ 0086  74 03	 	 	        JZ      EXEOK
+ 0088  E9 01C3 R	 	        JMP     BADEXE
+ 008B	 	 	 	EXEOK:
+ 008B  A1 0159 R	 	        MOV     AX,[PAGES]              ;Size o
+	 	 	 	f file in 512 byte blocks
+ 008E  B1 05	 	 	        MOV     CL,5
+ 0090  D3 E0	 	 	        SHL     AX,CL                   ;Size i
+	 	 	 	n paragraphs     
+ 0092  EB 24	 	 	        JMP     SHORT SETBUCKET
+ 	 	 	 	
+ 0094	 	 	 	NOTEXE:
+ 0094  A1 006C	 	 	        MOV     AX,WORD PTR DS:[FCB+FILELEN]
+ 0097  8B 16 006E	 	        MOV     DX,WORD PTR DS:[FCB+FILELEN+2] 
+	 	 	 	 ;Size of file in bytes DX:AX
+ 009B  05 000F	 	 	        ADD     AX,15
+ 009E  83 D2 00	 	 	        ADC     DX,0                           
+	 	 	 	 ;Round to PARA
+ 00A1  B1 04	 	 	        MOV     CL,4
+ 00A3  D3 E8	 	 	        SHR     AX,CL
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-14
+PROFIL - MS-DOS Profile program
+
+
+ 00A5  25 0FFF	 	 	        AND     AX,0FFFH
+ 00A8  B1 0C	 	 	        MOV     CL,12
+ 00AA  D3 E2	 	 	        SHL     DX,CL
+ 00AC  81 E2 F000	 	        AND     DX,0F000H
+ 00B0  0B C2	 	 	        OR      AX,DX                          
+	 	 	 	 ;Size in paragraphs to AX
+ 00B2  C7 06 0169 R 0100	        MOV     [PROG_RA],100H                 
+	 	 	 	 ;Default offset
+ 	 	 	 	
+ 00B8	 	 	 	SETBUCKET:
+ 00B8  50	 	 	        PUSH    AX                      ;Save s
+	 	 	 	ize
+ 00B9  33 D2	 	 	        XOR     DX,DX
+ 00BB  F7 36 0176 R	 	        DIV     [BUCKET_SIZE]
+ 00BF  40	 	 	        INC     AX                      ;Round 
+	 	 	 	up
+ 00C0  A3 0174 R	 	        MOV     [BUCKET_NUM],AX
+ 00C3  BB 0184 R	 	        MOV     BX,OFFSET DG:BUCKET
+ 00C6  D1 E0	 	 	        SHL     AX,1                    ;Number
+	 	 	 	 of bytes in bucket area
+ 00C8  03 C3	 	 	        ADD     AX,BX                   ;Size o
+	 	 	 	f profil in bytes
+ 00CA  05 000F	 	 	        ADD     AX,15                   ;Round 
+	 	 	 	up to PARA boundry
+ 00CD  B1 04	 	 	        MOV     CL,4
+ 00CF  D3 E8	 	 	        SHR     AX,CL                   ;Number
+	 	 	 	 of paragraphs in profil
+ 00D1  40	 	 	        INC     AX                      ;Insura
+	 	 	 	nce
+ 00D2  8C CB	 	 	        MOV     BX,CS
+ 00D4  03 C3	 	 	        ADD     AX,BX
+ 00D6  A3 0153 R	 	        MOV     [PROG_AREA],AX
+ 	 	 	 	
+ 00D9  80 3E 016F R 01	 	        CMP     [EXEFILE],1
+ 00DE  74 09	 	 	        JZ      SETBOUNDS
+ 00E0  A1 0153 R	 	        MOV     AX,[PROG_AREA]          ;Set up
+	 	 	 	 .COM segments
+ 00E3  A3 0163 R	 	        MOV     [PROG_SS],AX
+ 00E6  A3 016B R	 	        MOV     [PROG_SA],AX
+ 	 	 	 	
+ 00E9	 	 	 	SETBOUNDS:                              ;Set th
+	 	 	 	e sample window
+ 00E9  BB 0010	 	 	        MOV     BX,10H                  ;Get st
+	 	 	 	art offset
+ 00EC  03 1E 0153 R	 	        ADD     BX,[PROG_AREA]          ;PARA #
+	 	 	 	 of start
+ 00F0  89 1E 0178 R	 	        MOV     [PROG_LOW_PA],BX
+ 00F4  58	 	 	        POP     AX                      ;Recall
+	 	 	 	 size of PROG in paragraphs
+ 00F5  03 D8	 	 	        ADD     BX,AX
+ 00F7  89 1E 017A R	 	        MOV     [PROG_HIGH_PA],BX
+ 	 	 	 	
+ 00FB	 	 	 	SETDOS:
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-15
+PROFIL - MS-DOS Profile program
+
+
+ 00FB  33 D2	 	 	        XOR     DX,DX
+ 00FD  8E C2	 	 	        MOV     ES,DX                   ;look i
+	 	 	 	n interrupt area
+ 00FF  26: 8B 16 0082	 	        MOV     DX,WORD PTR ES:[82H]    ;From i
+	 	 	 	nt #20
+ 0104  89 16 017C R	 	        MOV     [DOS_PA],DX
+ 0108  1E	 	 	        PUSH    DS
+ 0109  07	 	 	        POP     ES
+ 	 	 	 	
+ 010A	 	 	 	GETGRAIN:                               ;Get sa
+	 	 	 	mple interval
+ 010A  BA 0202 R	 	        MOV     DX,OFFSET DG:GRAIN_PROMPT
+ 010D  B4 09	 	 	        MOV     AH,PRINTBUF
+ 010F  CD 21	 	 	        INT     21H
+ 0111  E8 0173 R	 	        CALL    INBUF
+ 0114  E8 01BC R	 	        CALL    SCANB
+ 0117  74 F1	 	 	        JZ      GETGRAIN                ;SCANB 
+	 	 	 	went to CR
+ 0119  BB 003C	 	 	        MOV     BX,60                   ;Grain 
+	 	 	 	>=60
+ 011C  E8 013F R	 	        CALL    GETNUM
+ 011F  72 E9	 	 	        JC      GETGRAIN                ;Bad nu
+	 	 	 	mber
+ 0121  89 16 0172 R	 	        MOV     [CLOCK_GRAIN],DX
+ 	 	 	 	
+ 0125  BA 0250 R	 	        MOV     DX,OFFSET DG:PARAM_PROMPT
+ 0128  B4 09	 	 	        MOV     AH,PRINTBUF
+ 012A  CD 21	 	 	        INT     21H
+ 012C  E8 0173 R	 	        CALL    INBUF                   ;Get pr
+	 	 	 	ogram parameters
+ 	 	 	 	
+ 012F  B8 2522	 	 	        MOV     AX,2522H                ;Set ve
+	 	 	 	ctor 22H
+ 0132  BA 02BB R	 	        MOV     DX,OFFSET DG:TERMINATE
+ 0135  CD 21	 	 	        INT     21H
+ 0137  B0 23	 	 	        MOV     AL,23H                  ;Set ve
+	 	 	 	ctor 23H
+ 0139  BA 02C1 R	 	        MOV     DX,OFFSET DG:ABORT
+ 013C  CD 21	 	 	        INT     21H
+ 013E  C3	 	 	        RET                             ;Back t
+	 	 	 	o resident code
+ 	 	 	 	
+ 013F	 	 	 	GETNUM:                         ;Get a number, 
+	 	 	 	DS:SI points to buffer, carry set if bad
+ 013F  33 D2	 	 	        XOR     DX,DX
+ 0141  B1 00	 	 	        MOV     CL,0
+ 0143  AC	 	 	        LODSB
+ 0144	 	 	 	NUMLP:
+ 0144  2C 30	 	 	        SUB     AL,"0"
+ 0146  72 1E	 	 	        JB      NUMCHK
+ 0148  3C 09	 	 	        CMP     AL,9
+ 014A  77 1A	 	 	        JA      NUMCHK
+ 014C  81 FA 1999	 	        CMP     DX,6553
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-16
+PROFIL - MS-DOS Profile program
+
+
+ 0150  73 1F	 	 	        JAE     BADNUM
+ 0152  B1 01	 	 	        MOV     CL,1
+ 0154  53	 	 	        PUSH    BX
+ 0155  8B DA	 	 	        MOV     BX,DX
+ 0157  D1 E2	 	 	        SHL     DX,1
+ 0159  D1 E2	 	 	        SHL     DX,1
+ 015B  03 D3	 	 	        ADD     DX,BX
+ 015D  D1 E2	 	 	        SHL     DX,1
+ 015F  98	 	 	        CBW
+ 0160  5B	 	 	        POP     BX
+ 0161  03 D0	 	 	        ADD     DX,AX
+ 0163  AC	 	 	        LODSB
+ 0164  EB DE	 	 	        JMP     NUMLP
+ 0166	 	 	 	NUMCHK:
+ 0166  80 F9 00	 	 	        CMP     CL,0
+ 0169  74 06	 	 	        JZ      BADNUM
+ 016B  3B DA	 	 	        CMP     BX,DX
+ 016D  77 02	 	 	        JA      BADNUM
+ 016F  F8	 	 	        CLC
+ 0170  C3	 	 	        RET
+ 0171	 	 	 	BADNUM:
+ 0171  F9	 	 	        STC
+ 0172  C3	 	 	        RET     
+ 	 	 	 	
+ 0173	 	 	 	INBUF:                                  ;Read i
+	 	 	 	n from console, SI points to start on exit
+ 0173  B4 0A	 	 	        MOV     AH,GETBUF
+ 0175  BA 0184 R	 	        MOV     DX,OFFSET DG:LINEBUF
+ 0178  CD 21	 	 	        INT     21H
+ 017A  BE 0186 R	 	        MOV     SI,2 + OFFSET DG:LINEBUF
+ 017D  BF 00FF R	 	        MOV     DI,OFFSET DG:BYTEBUF
+ 0180	 	 	 	CASECHK:
+ 0180  AC	 	 	        LODSB
+ 0181  3C 61	 	 	        CMP     AL,'a'
+ 0183  72 06	 	 	        JB      NOCONV
+ 0185  3C 7A	 	 	        CMP     AL,'z'
+ 0187  77 02	 	 	        JA      NOCONV
+ 0189  04 E0	 	 	        ADD     AL,"A"-"a"              ;Conver
+	 	 	 	t to upper case
+ 018B	 	 	 	NOCONV:
+ 018B  AA	 	 	        STOSB
+ 018C  3C 0D	 	 	        CMP     AL,13
+ 018E  74 16	 	 	        JZ      INDONE
+ 0190  3C 22	 	 	        CMP     AL,'"'
+ 0192  75 04	 	 	        JNZ     QUOTSCAN
+ 0194  3C 27	 	 	        CMP     AL,"'"
+ 0196  75 E8	 	 	        JNZ     CASECHK
+ 0198	 	 	 	QUOTSCAN:
+ 0198  8A E0	 	 	        MOV     AH,AL
+ 019A	 	 	 	KILLSTR:
+ 019A  AC	 	 	        LODSB
+ 019B  AA	 	 	        STOSB
+ 019C  3C 0D	 	 	        CMP     AL,13
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-17
+PROFIL - MS-DOS Profile program
+
+
+ 019E  74 06	 	 	        JZ      INDONE
+ 01A0  3A C4	 	 	        CMP     AL,AH
+ 01A2  75 F6	 	 	        JNZ     KILLSTR
+ 01A4  EB DA	 	 	        JMP     SHORT CASECHK
+ 	 	 	 	
+ 01A6	 	 	 	INDONE:
+ 01A6  BE 00FF R	 	        MOV     SI,OFFSET DG:BYTEBUF
+ 	 	 	 	
+ 	 	 	 	;Output CR/LF
+ 	 	 	 	
+ 01A9	 	 	 	CRLF:
+ 01A9  B0 0D	 	 	        MOV     AL,13
+ 01AB  E8 01B0 R	 	        CALL    OUT
+ 01AE  B0 0A	 	 	        MOV     AL,10
+ 	 	 	 	
+ 01B0	 	 	 	OUT:
+ 01B0  50	 	 	        PUSH    AX
+ 01B1  52	 	 	        PUSH    DX
+ 01B2  24 7F	 	 	        AND     AL,7FH
+ 01B4  92	 	 	        XCHG    AX,DX
+ 01B5  B4 02	 	 	        MOV     AH,OUTCH
+ 01B7  CD 21	 	 	        INT     21H
+ 01B9  5A	 	 	        POP     DX
+ 01BA  58	 	 	        POP     AX
+ 01BB  C3	 	 	        RET
+ 	 	 	 	
+ 01BC	 	 	 	SCANB:                          ;Scan to first 
+	 	 	 	non-blank
+ 01BC  50	 	 	        PUSH    AX
+ 01BD	 	 	 	SCANNEXT:
+ 01BD  AC	 	 	        LODSB
+ 01BE  3C 20	 	 	        CMP     AL," "
+ 01C0  74 FB	 	 	        JZ      SCANNEXT
+ 01C2  3C 09	 	 	        CMP     AL,9
+ 01C4  74 F7	 	 	        JZ      SCANNEXT
+ 01C6  4E	 	 	        DEC     SI
+ 01C7  58	 	 	        POP     AX
+ 01C8	 	 	 	EOLCHK:
+ 01C8  80 3C 0D	 	 	        CMP     BYTE PTR[SI],13
+ 01CB  C3	 	 	        RET
+ 	 	 	 	
+ 01CC	 	 	 	INIT    ENDS
+ 	 	 	 	        END     START
+
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	Symbols
+	 	 	 	-1
+PROFIL - MS-DOS Profile program
+
+
+Segments and groups:
+
+	 	N a m e	 	 	Size	align	combine	class
+
+DG . . . . . . . . . . . . . . .	GROUP
+  CODE . . . . . . . . . . . . . .	0366	PARA  	PUBLIC	
+  DATA . . . . . . . . . . . . . .	0268	BYTE  	NONE	
+  INIT . . . . . . . . . . . . . .	01CC	BYTE  	NONE	
+
+Symbols:            
+
+	 	N a m e	 	 	Type	Value	Attr         
+
+ABORT. . . . . . . . . . . . . .	L NEAR 	02C1	CODE
+ABORTMES . . . . . . . . . . . .	L BYTE 	0020	DATA
+AXSAVE . . . . . . . . . . . . .	L WORD 	014F	DATA
+BADEXE . . . . . . . . . . . . .	L NEAR 	01C3	CODE
+BADNUM . . . . . . . . . . . . .	L NEAR 	0171	INIT
+BIGRD. . . . . . . . . . . . . .	L NEAR 	02A2	CODE
+BINFIL . . . . . . . . . . . . .	L NEAR 	0212	CODE
+BLKRD. . . . . . . . . . . . . .	Number	0027	
+BLKWRT . . . . . . . . . . . . .	Number	0028	
+BUCKET . . . . . . . . . . . . .	L WORD 	0184	DATA
+BUCKET_NUM . . . . . . . . . . .	L WORD 	0174	DATA
+BUCKET_SIZE. . . . . . . . . . .	L WORD 	0176	DATA
+BUFLEN . . . . . . . . . . . . .	Number	0050	
+BXSAVE . . . . . . . . . . . . .	L WORD 	0151	DATA
+BYTEBUF. . . . . . . . . . . . .	L BYTE 	00FF	DATA	Length =0050
+CASECHK. . . . . . . . . . . . .	L NEAR 	0180	INIT
+CLEAR. . . . . . . . . . . . . .	L NEAR 	0245	CODE
+CLK_INTER. . . . . . . . . . . .	N PROC	02FC	CODE	Global	Length 
+	 	 	 	=006A
+CLOCKOFF . . . . . . . . . . . .	L NEAR 	0000	CODE	External
+CLOCKON. . . . . . . . . . . . .	L NEAR 	0000	CODE	External
+CLOCK_GRAIN. . . . . . . . . . .	L WORD 	0172	DATA
+CLOSE. . . . . . . . . . . . . .	Number	0010	
+COMTAIL. . . . . . . . . . . . .	L NEAR 	0117	CODE
+CREATE . . . . . . . . . . . . .	Number	0016	
+CRLF . . . . . . . . . . . . . .	L NEAR 	01A9	INIT
+DONE . . . . . . . . . . . . . .	L NEAR 	035E	CODE
+DOSHIT . . . . . . . . . . . . .	L NEAR 	0354	CODE
+DOS_PA . . . . . . . . . . . . .	L WORD 	017C	DATA
+DRV_VALID. . . . . . . . . . . .	L WORD 	0170	DATA
+ENDMES . . . . . . . . . . . . .	L BYTE 	0000	DATA
+EOLCHK . . . . . . . . . . . . .	L NEAR 	01C8	INIT
+ERROR. . . . . . . . . . . . . .	L NEAR 	01C6	CODE
+EXEBAD . . . . . . . . . . . . .	L BYTE 	0046	DATA
+EXEFILE. . . . . . . . . . . . .	L BYTE 	016F	DATA
+EXELOAD. . . . . . . . . . . . .	L NEAR 	014D	CODE
+EXEOK. . . . . . . . . . . . . .	L NEAR 	008B	INIT
+FCB. . . . . . . . . . . . . . .	Number	005C	
+FILELEN. . . . . . . . . . . . .	Number	0010	
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	Symbols
+	 	 	 	-2
+PROFIL - MS-DOS Profile program
+
+
+GETBUF . . . . . . . . . . . . .	Number	000A	
+GETGRAIN . . . . . . . . . . . .	L NEAR 	010A	INIT
+GETNUM . . . . . . . . . . . . .	L NEAR 	013F	INIT
+GETSIZE. . . . . . . . . . . . .	L NEAR 	0038	INIT
+GRAIN_PROMPT . . . . . . . . . .	L BYTE 	0202	DATA
+HAVEXE . . . . . . . . . . . . .	L NEAR 	01CC	CODE
+HEADSIZ. . . . . . . . . . . . .	L WORD 	015D	DATA
+HIT_DOS. . . . . . . . . . . . .	L WORD 	0180	DATA
+HIT_HIGH . . . . . . . . . . . .	L WORD 	0182	DATA
+HIT_IO . . . . . . . . . . . . .	L WORD 	017E	DATA
+INBUF. . . . . . . . . . . . . .	L NEAR 	0173	INIT
+INDONE . . . . . . . . . . . . .	L NEAR 	01A6	INIT
+INITCS . . . . . . . . . . . . .	L WORD 	016B	DATA
+INITIP . . . . . . . . . . . . .	L WORD 	0169	DATA
+INITSP . . . . . . . . . . . . .	L WORD 	0165	DATA
+INITSS . . . . . . . . . . . . .	L WORD 	0163	DATA
+IOHIT. . . . . . . . . . . . . .	L NEAR 	034E	CODE
+KILLSTR. . . . . . . . . . . . .	L NEAR 	019A	INIT
+LASTP. . . . . . . . . . . . . .	L WORD 	0157	DATA
+LEAVE_INT. . . . . . . . . . . .	L NEAR 	0000	CODE	External
+LINEBUF. . . . . . . . . . . . .	L BYTE 	0184	DATA
+LOADEXE. . . . . . . . . . . . .	L NEAR 	01BA	CODE
+LOADEXEHEAD. . . . . . . . . . .	L NEAR 	0062	INIT
+LOADLOW. . . . . . . . . . . . .	L WORD 	0161	DATA
+MISSH. . . . . . . . . . . . . .	L NEAR 	035A	CODE
+NOCONV . . . . . . . . . . . . .	L NEAR 	018B	INIT
+NOFILE . . . . . . . . . . . . .	L BYTE 	01D7	DATA
+NOREL. . . . . . . . . . . . . .	L NEAR 	0208	CODE
+NOTEXE . . . . . . . . . . . . .	L NEAR 	0094	INIT
+NUMCHK . . . . . . . . . . . . .	L NEAR 	0166	INIT
+NUMLP. . . . . . . . . . . . . .	L NEAR 	0144	INIT
+NUM_DATA_WORDS . . . . . . . . .	Number	0009	
+OPEN . . . . . . . . . . . . . .	Number	000F	
+OPENOK . . . . . . . . . . . . .	L NEAR 	0011	INIT
+OUT. . . . . . . . . . . . . . .	L NEAR 	01B0	INIT
+OUTCH. . . . . . . . . . . . . .	Number	0002	
+OUTERR . . . . . . . . . . . . .	L BYTE 	01E8	DATA
+OUTNAME. . . . . . . . . . . . .	L BYTE 	0056	DATA
+OUTPUT_DATA. . . . . . . . . . .	L WORD 	0172	DATA
+OUT_FCB. . . . . . . . . . . . .	L WORD 	0055	DATA
+PAGES. . . . . . . . . . . . . .	L WORD 	0159	DATA
+PARAM_PROMPT . . . . . . . . . .	L BYTE 	0250	DATA
+PARTP. . . . . . . . . . . . . .	L NEAR 	018A	CODE
+PRINTBUF . . . . . . . . . . . .	Number	0009	
+PROGGO . . . . . . . . . . . . .	L NEAR 	0231	CODE
+PROG_AREA. . . . . . . . . . . .	L WORD 	0153	DATA
+PROG_ENTRY . . . . . . . . . . .	E DWORD	0169	DATA
+PROG_HIGH_PA . . . . . . . . . .	L WORD 	017A	DATA
+PROG_LOW_PA. . . . . . . . . . .	L WORD 	0178	DATA
+PROG_RA. . . . . . . . . . . . .	L WORD 	0169	DATA
+PROG_SA. . . . . . . . . . . . .	L WORD 	016B	DATA
+PROG_SP. . . . . . . . . . . . .	L WORD 	0165	DATA
+ The Microsoft MACRO Assembler             12-10-<1    	PAGE	Symbols
+	 	 	 	-3
+PROFIL - MS-DOS Profile program
+
+
+PROG_SS. . . . . . . . . . . . .	L WORD 	0163	DATA
+PSIZE. . . . . . . . . . . . . .	L WORD 	0159	DATA
+QUOTSCAN . . . . . . . . . . . .	L NEAR 	0198	INIT
+RDLOOP . . . . . . . . . . . . .	L NEAR 	0280	CODE
+READ . . . . . . . . . . . . . .	L NEAR 	0280	CODE
+RECLEN . . . . . . . . . . . . .	Number	000E	
+RELCNT . . . . . . . . . . . . .	L WORD 	015B	DATA
+RELOC. . . . . . . . . . . . . .	L NEAR 	01E6	CODE
+RELPT. . . . . . . . . . . . . .	L WORD 	0155	DATA
+RELSEG . . . . . . . . . . . . .	L WORD 	0157	DATA
+RELTAB . . . . . . . . . . . . .	L WORD 	016D	DATA
+RET10. . . . . . . . . . . . . .	L NEAR 	02B9	CODE
+RR . . . . . . . . . . . . . . .	Number	0021	
+RUNVAR . . . . . . . . . . . . .	L WORD 	0155	DATA
+RUNVARSIZ. . . . . . . . . . . .	Number	001A	
+SCANB. . . . . . . . . . . . . .	L NEAR 	01BC	INIT
+SCANNEXT . . . . . . . . . . . .	L NEAR 	01BD	INIT
+SETBASE. . . . . . . . . . . . .	Number	0026	
+SETBOUNDS. . . . . . . . . . . .	L NEAR 	00E9	INIT
+SETBUCKET. . . . . . . . . . . .	L NEAR 	00B8	INIT
+SETDMA . . . . . . . . . . . . .	Number	001A	
+SETDOS . . . . . . . . . . . . .	L NEAR 	00FB	INIT
+SETUP. . . . . . . . . . . . . .	L NEAR 	0000	INIT
+SIZE_PROMPT. . . . . . . . . . .	L BYTE 	0223	DATA
+STACK. . . . . . . . . . . . . .	L WORD 	00FF	DATA
+START. . . . . . . . . . . . . .	L NEAR 	0100	CODE
+TERMINATE. . . . . . . . . . . .	L NEAR 	02BB	CODE
+TOOBIG . . . . . . . . . . . . .	L BYTE 	0034	DATA
+WRITEOUT . . . . . . . . . . . .	L NEAR 	02C5	CODE
+XXX. . . . . . . . . . . . . . .	F PROC	027F	CODE	Length =0001
+
+Warning Severe
+Errors	Errors 
+0	0
