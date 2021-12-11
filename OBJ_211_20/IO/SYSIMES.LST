@@ -1,12 +1,14 @@
- The Microsoft MACRO Assembler             12-10-<1    	PAGE	1-1
+ The Microsoft MACRO Assembler             12-11-<1    	PAGE	1-1
 
 
 
  0000	 	 	 	SYSINITSEG      SEGMENT PUBLIC BYTE 'SYSTEM_INI
 	 	 	 	T'
  	 	 	 	
- 	 	 	 	        PUBLIC  BADOPM,CRLFM,BADSIZ,BADLD,BADCO
-	 	 	 	M,SYSSIZE
+ 	 	 	 	        PUBLIC  BADOPM,CRLFM,BADSIZ_PRE,BADLD_P
+	 	 	 	RE,BADCOM,SYSSIZE
+ 	 	 	 	        PUBLIC  BADSIZ_POST,BADLD_POST,BADCOUNT
+	 	 	 	RY
  	 	 	 	
  0000  0D 0A 55 6E 72 65	BADOPM  DB      13,10,"Unrecognized command in 
 	 	 	 	CONFIG.SYS"
@@ -17,29 +19,37 @@
        49 47 2E 53 59 53	
  0024  0D 0A 24	 	 	CRLFM   DB      13,10,'$'
  	 	 	 	
- 0027  0D 0A 53 65 63 74	BADSIZ  DB      13,10,"Sector size too large in
-	 	 	 	 file $"
+ 0027  0D 0A 53 65 63 74	BADSIZ_PRE  DB      13,10,"Sector size too larg
+	 	 	 	e in file"
        6F 72 20 73 69 7A	
        65 20 74 6F 6F 20	
        6C 61 72 67 65 20	
        69 6E 20 66 69 6C	
-       65 20 24	 	 	
+       65	 	 	
+ 0046  20 24	 	 	BADSIZ_POST DB      " $"
  	 	 	 	
- 0048  0D 0A 42 61 64 20	BADLD   DB      13,10,"Bad or missing $"
+ 0048  0D 0A 42 61 64 20	BADLD_PRE   DB      13,10,"Bad or missing"
        6F 72 20 6D 69 73	
-       73 69 6E 67 20 24	
+       73 69 6E 67	 	
+ 0058  20 24	 	 	BADLD_POST   DB      " $"
  	 	 	 	
  005A  43 6F 6D 6D 61 6E	BADCOM  DB      "Command Interpreter",0
        64 20 49 6E 74 65	
        72 70 72 65 74 65	
        72 00	 	 	
  	 	 	 	
- 006E	 	 	 	SYSSIZE LABEL   BYTE
+ 006E  49 6E 76 61 6C 69	BADCOUNTRY DB   "Invalid country code",13,10,'$
+	 	 	 	'
+       64 20 63 6F 75 6E	
+       74 72 79 20 63 6F	
+       64 65 0D 0A 24	 	
  	 	 	 	
- 006E	 	 	 	SYSINITSEG      ENDS
+ 0085	 	 	 	SYSSIZE LABEL   BYTE
+ 	 	 	 	
+ 0085	 	 	 	SYSINITSEG      ENDS
  	 	 	 	        END
 
- The Microsoft MACRO Assembler             12-10-<1    	PAGE	Symbols
+ The Microsoft MACRO Assembler             12-11-<1    	PAGE	Symbols
 	 	 	 	-1
 
 
@@ -48,18 +58,21 @@ Segments and groups:
 
 	 	N a m e	 	 	Size	align	combine	class
 
-SYSINITSEG . . . . . . . . . . .	006E	BYTE  	PUBLIC	'SYSTEM'
+SYSINITSEG . . . . . . . . . . .	0085	BYTE  	PUBLIC	'SYSTEM'
 
 Symbols:            
 
 	 	N a m e	 	 	Type	Value	Attr         
 
 BADCOM . . . . . . . . . . . . .	L BYTE 	005A	SYSINITSEG	Global
-BADLD. . . . . . . . . . . . . .	L BYTE 	0048	SYSINITSEG	Global
+BADCOUNTRY . . . . . . . . . . .	L BYTE 	006E	SYSINITSEG	Global
+BADLD_POST . . . . . . . . . . .	L BYTE 	0058	SYSINITSEG	Global
+BADLD_PRE. . . . . . . . . . . .	L BYTE 	0048	SYSINITSEG	Global
 BADOPM . . . . . . . . . . . . .	L BYTE 	0000	SYSINITSEG	Global
-BADSIZ . . . . . . . . . . . . .	L BYTE 	0027	SYSINITSEG	Global
+BADSIZ_POST. . . . . . . . . . .	L BYTE 	0046	SYSINITSEG	Global
+BADSIZ_PRE . . . . . . . . . . .	L BYTE 	0027	SYSINITSEG	Global
 CRLFM. . . . . . . . . . . . . .	L BYTE 	0024	SYSINITSEG	Global
-SYSSIZE. . . . . . . . . . . . .	L BYTE 	006E	SYSINITSEG	Global
+SYSSIZE. . . . . . . . . . . . .	L BYTE 	0085	SYSINITSEG	Global
 
 Warning Severe
 Errors	Errors 

@@ -3,6 +3,6 @@ Warning: No STACK segment
 
  Start  Stop   Length  Name                   Class
  00000H 005CCH 05CDH  CODE                   
- 005D0H 00D83H 07B4H  SYSINITSEG             SYSTEM_INIT
+ 005D0H 00DD2H 0803H  SYSINITSEG             SYSTEM_INIT
 
  Origin   Group
