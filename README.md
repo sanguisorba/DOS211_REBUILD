@@ -92,7 +92,14 @@ FORMAT.COMはとりあえず生成できますが、実行するとブートセ�
 * 完成
 
 
-# 本レポジトリではBOOT.ASM, BIOS.ASM, OEMFOR.ASMを提供しません。
+# Microsoftのレポジトリで配布されていないものはここでは掲載していません
+
+MS-DOS 2.x用のモジュールについては以下の機種でメーカーが配布していた事を確認済です。
+
+* NEC A.P.C. MS-DOS 2.11 #2 (IO.SYS)
+* SCP Tarbell MS-DOS 2.00 #M86util (IO.SYS, FORMAT, ブートローダ)
+
+# 更新履歴
 
 20210722 PC-98上でMSDOS.SYSを動かせるようになりました
 
