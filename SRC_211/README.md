@@ -19,7 +19,7 @@ Wordstar 3.2のファイルはsourceフォルダのWSBAUD.BAS, WSMSGS.OVR, WSOVL
 ファイルリストなど詳しくはこのサイトを参照
 https://www.pcjs.org/software/pcx86/sys/dos/microsoft/2.00/
 
-![image](https://raw.githubusercontent.com/sanguisorba/DOS211_REBUILD/main/SRC_211/disks.png)
+![image](https://raw.githubusercontent.com/sanguisorba/DOS211_REBUILD/master/SRC_211/disks.png)
 
 各OEMベンダーがMS-DOSを自社のコンピュータ用にアレンジするための開発ディスクで、ファイルリストは以下の通り
 
