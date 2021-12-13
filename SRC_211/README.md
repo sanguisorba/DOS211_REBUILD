@@ -140,7 +140,7 @@ CHKDSK.ASMはそのままコンパイルしようとするとエラーが起き�
         XCHG    AL,BYTE PTR [ERRSUB]
 ```
 
-###COMMAND
+### COMMAND
 ```
 ○ASM→OBJにする
 COMMAND.ASM
@@ -178,7 +178,7 @@ TDATA.ASMは文字化けがあります。正しい内容はこちら
 
 https://raw.githubusercontent.com/jeffpar/pcjs-demo-disks/master/pcx86/dos/microsoft/2.11/src/COMMAND/TDATA.ASM
 
-###DEBUG
+### DEBUG
 ```
 ○ASM→OBJにする
 DEBASM.ASM
@@ -199,7 +199,7 @@ LINK DEBUG.OBJ DEBCOM1.OBJ DEBCOM2.OBJ DEBUASM.OBJ DEBASM.OBJ DEBCONST.OBJ DEBDA
 EXE2BIN DEBUG.EXE DEBUG.COM
 ```
 
-###DISKCOPY
+### DISKCOPY
 ```
 ○ASM→OBJにする
 DISKCOPY.ASM
@@ -213,7 +213,7 @@ LINK DISKCOPY.OBJ DISKMES.OBJ
 EXE2BIN DISKCOPY.EXE DISKCOPY.COM
 ```
 
-###EDLIN
+### EDLIN
 ```
 ○ASM→OBJにする
 EDLIN.ASM
@@ -228,7 +228,7 @@ LINK EDLIN.OBJ EDLMES.OBJ EDLPROC.OBJ
 EXE2BIN EDLIN.EXE EDLIN.COM
 ```
 
-###EXE2BIN
+### EXE2BIN
 ```
 ○ASM→OBJにする
 EXE2BIN.ASM
@@ -241,7 +241,7 @@ DOSSYM.ASM ← 2.11を使う
 LINK EXE2BIN.OBJ EXEMES.OBJ
 ```
 
-###FC
+### FC
 ```
 ○ASM→OBJにする
 FC.ASM
@@ -254,7 +254,7 @@ DOSSYM.ASM ← 2.11を使う
 LINK FC.OBJ FCMES.OBJ
 ```
 
-###FIND
+### FIND
 ```
 ○ASM→OBJにする
 FIND.ASM
@@ -263,7 +263,7 @@ FINDMES.ASM
 LINK FIND.OBJ FINDMES.OBJ
 ```
 
-###FORMAT
+### FORMAT
 ```
 ○ASM→OBJにする
 FORMAT.ASM
@@ -278,7 +278,7 @@ LINK FORMAT.OBJ FORMES.OBJ GENFOR.OBJ
 EXE2BIN FORMAT.EXE FORMAT.COM
 ```
 
-###IO
+### IO
 ```
 ○ASM→OBJにする
 (BIOS.ASM) <-自分で書く。　サンプルコード SKELIO.ASM
@@ -320,7 +320,7 @@ SYSINITSEG      ENDS
 
 尚、SKELIOについても不足している部分があり正常にリンクできませんが、後述。
 
-###MORE
+### MORE
 ```
 ○ASM→OBJにする
 MORE.ASM
@@ -334,7 +334,7 @@ LINK MORE.OBJ MOREMES.OBJ
 EXE2BIN MORE.EXE MORE.COM
 ```
 
-###MSDOS
+### MSDOS
 
 ```
 ○ASM→OBJにする
@@ -391,7 +391,7 @@ STDSWでIBM PC-DOSからMS-DOSへ切り替える必要があります。
 
 筆者のレポジトリではPCjsによる改良版があるためそちらを拝借しています。PCjs版もMASM 4.00でコンパイルしないとエラーが起きますが、MASM 1.20でコンパイルできるようにさらに変更を加えています。
 
-###PRINT
+### PRINT
 ```
 ○ASM→OBJにする
 PRINT.ASM ← 2.11を使う
@@ -404,7 +404,7 @@ LINK PRINT.OBJ
 EXE2BIN PRINT.EXE PRINT.COM
 ```
 
-###RECOVER
+### RECOVER
 ```
 ○ASM→OBJにする
 RECMES.ASM
@@ -418,7 +418,7 @@ LINK RECOVER.OBJ RECMES.OBJ
 EXE2BIN RECOVER.EXE RECOVER.COM
 ```
 
-###SORT
+### SORT
 ```
 ○ASM→OBJにする
 SORT.ASM
@@ -439,7 +439,7 @@ EXEMOD SORT.EXE /MAX 1 /MIN 1
 適用後はちゃんと動くようになった。
 ```
 
-###SYS
+### SYS
 ```
 ○ASM→OBJにする
 SYS.ASM
