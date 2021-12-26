@@ -1,9 +1,0 @@
-
-
- Start  Stop   Length  Name                   Class
- 00000H 016BAH 16BBH  CODE                   
- 016C0H 017BFH 0100H  STACK                  
-
- Origin   Group
-
-Program entry point at 0000:0030
