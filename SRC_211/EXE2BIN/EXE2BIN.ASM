@@ -99,7 +99,7 @@ CODE    SEGMENT BYTE
 LOCATE  PROC    FAR
         JMP     SHORT LOCSTRT
 
-HEADER  DB      "Vers 2.00"
+HEADER  DB      "Vers 2.02"
 
 LOCSTRT:
         MOV     SI,81H
@@ -511,4 +511,4 @@ MKERR:
 LOCATE  ENDP
 CODE    ENDS
         END     LOCATE
-                                                                                    
+                                                                                    

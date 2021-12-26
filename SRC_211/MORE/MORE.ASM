@@ -126,7 +126,7 @@ ASKMORE:
         INT     21H                     ; ASK MORE?
 
         MOV     AH,STD_CON_INPUT_FLUSH  ; WAIT FOR A KEY, NO ECHO
-        MOV     AL,STD_CON_INPUT
+        MOV     AL,STD_CON_INPUT_NO_ECHO
         INT     21H
 
         MOV     DX,OFFSET CRLFTXT

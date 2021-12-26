@@ -96,7 +96,7 @@ TRUE    EQU     NOT FALSE
 
 KANJI   EQU     FALSE
 
-roprot  equ     true            ;set to TRUE if protection to r/o files
+roprot  equ     false            ;set to TRUE if protection to r/o files
                                 ; desired.
 FCB     EQU     5CH
 
